@@ -65,15 +65,5 @@ namespace UnityEditor.AddressableAssets.GUI
             m_AnalyzeEditor.OnGUI(displayAreaRect);
             GUILayout.EndArea();
         }
-
-        /// <summary>
-        /// Obsolete - please use AnalyzeSystem.RegisterNewRule&lt;TRule&gt;()
-        /// </summary>
-        /// <typeparam name="TRule">The rule type.</typeparam>
-        [Obsolete("Please use AnalyzeSystem.RegisterNewRule<TRule>()")]
-        public static void RegisterNewRule<TRule>() where TRule : AnalyzeRule, new()
-        {
-            AnalyzeSystem.RegisterNewRule<TRule>();
-        }
     }
 }

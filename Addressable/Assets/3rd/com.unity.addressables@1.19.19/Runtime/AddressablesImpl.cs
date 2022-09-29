@@ -100,14 +100,14 @@ namespace UnityEngine.AddressableAssets
         }
 
         internal List<ResourceLocatorInfo> m_ResourceLocators = new List<ResourceLocatorInfo>();
-        AsyncOperationHandle<IResourceLocator> m_InitializationOperation;
+        AsyncOperationHandle<IResourceLocator> m_InitOperation;
         AsyncOperationHandle<List<string>> m_ActiveCheckUpdateOperation;
         internal AsyncOperationHandle<List<IResourceLocator>> m_ActiveUpdateOperation;
-
-
-        Action<AsyncOperationHandle> m_OnHandleCompleteAction;
+        
+        Action<AsyncOperationHandle> m_OnAssetHandleCompleteAction;
         Action<AsyncOperationHandle> m_OnSceneHandleCompleteAction;
         Action<AsyncOperationHandle> m_OnHandleDestroyedAction;
+        
         Dictionary<object, AsyncOperationHandle> m_resultToHandle = new Dictionary<object, AsyncOperationHandle>();
         internal HashSet<AsyncOperationHandle> m_SceneInstances = new HashSet<AsyncOperationHandle>();
 
@@ -145,8 +145,8 @@ namespace UnityEngine.AddressableAssets
             {
                 if (!hasStartedInitialization)
                     return InitializeAsync();
-                if (m_InitializationOperation.IsValid() && !m_InitializationOperation.IsDone)
-                    return m_InitializationOperation;
+                if (this.m_InitOperation.IsValid() && !this.m_InitOperation.IsDone)
+                    return this.m_InitOperation;
                 if (m_ActiveUpdateOperation.IsValid() && !m_ActiveUpdateOperation.IsDone)
                     return m_ActiveUpdateOperation;
                 Debug.LogWarning($"{nameof(ChainOperation)} property should not be accessed unless {nameof(ShouldChainRequest)} is true.");
@@ -161,7 +161,7 @@ namespace UnityEngine.AddressableAssets
                 if (!hasStartedInitialization)
                     return true;
 
-                if (m_InitializationOperation.IsValid() && !m_InitializationOperation.IsDone)
+                if (this.m_InitOperation.IsValid() && !this.m_InitOperation.IsDone)
                     return true;
 
                 return m_ActiveUpdateOperation.IsValid() && !m_ActiveUpdateOperation.IsDone;
@@ -400,8 +400,8 @@ namespace UnityEngine.AddressableAssets
         {
             if (hasStartedInitialization)
             {
-                if (m_InitializationOperation.IsValid())
-                    return m_InitializationOperation;
+                if (this.m_InitOperation.IsValid())
+                    return this.m_InitOperation;
                 var completedOperation = ResourceManager.CreateCompletedOperation(m_ResourceLocators[0].Locator, errorMsg: null);
                 if (autoReleaseHandle)
                     AutoReleaseHandleOnCompletion(completedOperation);
@@ -413,8 +413,8 @@ namespace UnityEngine.AddressableAssets
                 ResourceManager.ExceptionHandler = LogException;
             }
             hasStartedInitialization = true;
-            if (m_InitializationOperation.IsValid())
-                return m_InitializationOperation;
+            if (this.m_InitOperation.IsValid())
+                return this.m_InitOperation;
             //these need to be referenced in order to prevent stripping on IL2CPP platforms.
             if (string.IsNullOrEmpty(Application.streamingAssetsPath))
                 Addressables.LogWarning("Application.streamingAssetsPath has been stripped!");
@@ -425,7 +425,7 @@ namespace UnityEngine.AddressableAssets
             if (string.IsNullOrEmpty(runtimeDataPath))
                 return ResourceManager.CreateCompletedOperation<IResourceLocator>(null, string.Format("Invalid Key: {0}", runtimeDataPath));
 
-            m_OnHandleCompleteAction = OnHandleCompleted;
+            this.m_OnAssetHandleCompleteAction = this.OnAssetHandleCompleted;
             m_OnSceneHandleCompleteAction = OnSceneHandleCompleted;
             m_OnHandleDestroyedAction = OnHandleDestroyed;
 
@@ -456,16 +456,16 @@ namespace UnityEngine.AddressableAssets
                 if (settingsObject != null)
                 {
                     var settingsSetupMethod = settingsType.GetMethod("CreatePlayModeInitializationOperation", BindingFlags.Instance | BindingFlags.NonPublic);
-                    m_InitializationOperation = (AsyncOperationHandle<IResourceLocator>)settingsSetupMethod.Invoke(settingsObject, new object[] { this });
+                    this.m_InitOperation = (AsyncOperationHandle<IResourceLocator>)settingsSetupMethod.Invoke(settingsObject, new object[] { this });
                 }
             }
 #endif
-            if(!m_InitializationOperation.IsValid())
-                m_InitializationOperation = Initialization.InitializationOperation.CreateInitializationOperation(this, runtimeDataPath, providerSuffix);
+            if(!this.m_InitOperation.IsValid())
+                this.m_InitOperation = Initialization.InitializationOperation.CreateInitializationOperation(this, runtimeDataPath, providerSuffix);
             if (autoReleaseHandle)
-                AutoReleaseHandleOnCompletion(m_InitializationOperation);
+                AutoReleaseHandleOnCompletion(this.m_InitOperation);
 
-            return m_InitializationOperation;
+            return this.m_InitOperation;
         }
 
         public AsyncOperationHandle<IResourceLocator> InitializeAsync()
@@ -561,13 +561,13 @@ namespace UnityEngine.AddressableAssets
 
         AsyncOperationHandle<TObject> TrackHandle<TObject>(AsyncOperationHandle<TObject> handle)
         {
-            handle.CompletedTypeless += m_OnHandleCompleteAction;
+            handle.CompletedTypeless += this.m_OnAssetHandleCompleteAction;
             return handle;
         }
 
         AsyncOperationHandle TrackHandle(AsyncOperationHandle handle)
         {
-            handle.Completed += m_OnHandleCompleteAction;
+            handle.Completed += this.m_OnAssetHandleCompleteAction;
             return handle;
         }
 
@@ -785,7 +785,7 @@ namespace UnityEngine.AddressableAssets
             }
         }
 
-        void OnHandleCompleted(AsyncOperationHandle handle)
+        void OnAssetHandleCompleted(AsyncOperationHandle handle)
         {
             if (handle.Status == AsyncOperationStatus.Succeeded)
             {
@@ -1150,7 +1150,7 @@ namespace UnityEngine.AddressableAssets
         {
             var chainOp = ResourceManager.CreateChainOperation(dep, op => InstantiateAsync(key, instantiateParameters, false));
             if (trackHandle)
-                chainOp.CompletedTypeless += m_OnHandleCompleteAction;
+                chainOp.CompletedTypeless += this.m_OnAssetHandleCompleteAction;
             return chainOp;
         }
 
@@ -1175,7 +1175,7 @@ namespace UnityEngine.AddressableAssets
         {
             var chainOp = ResourceManager.CreateChainOperation(dep, op => InstantiateAsync(location, instantiateParameters, false));
             if (trackHandle)
-                chainOp.CompletedTypeless += m_OnHandleCompleteAction;
+                chainOp.CompletedTypeless += this.m_OnAssetHandleCompleteAction;
             return chainOp;
         }
 
@@ -1188,7 +1188,7 @@ namespace UnityEngine.AddressableAssets
             var opHandle = ResourceManager.ProvideInstance(InstanceProvider, location, instantiateParameters);
             if (!trackHandle)
                 return opHandle;
-            opHandle.CompletedTypeless += m_OnHandleCompleteAction;
+            opHandle.CompletedTypeless += this.m_OnAssetHandleCompleteAction;
             return opHandle;
         }
 

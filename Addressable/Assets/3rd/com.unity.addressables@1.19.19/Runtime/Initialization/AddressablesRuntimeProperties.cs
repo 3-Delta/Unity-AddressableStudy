@@ -29,11 +29,11 @@ namespace UnityEngine.AddressableAssets.Initialization
 
 #endif
 
-        static Dictionary<string, string> s_CachedValues = new Dictionary<string, string>();
+        static Dictionary<string, string> s_cancheDict = new Dictionary<string, string>();
 
         internal static int GetCachedValueCount()
         {
-            return s_CachedValues.Count;
+            return s_cancheDict.Count;
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace UnityEngine.AddressableAssets.Initialization
         /// <param name="val">The property value.</param>
         public static void SetPropertyValue(string name, string val)
         {
-            s_CachedValues[name] = val;
+            s_cancheDict[name] = val;
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace UnityEngine.AddressableAssets.Initialization
         /// </summary>
         public static void ClearCachedPropertyValues()
         {
-            s_CachedValues.Clear();
+            s_cancheDict.Clear();
         }
 
         /// <summary>
@@ -62,13 +62,13 @@ namespace UnityEngine.AddressableAssets.Initialization
         /// <returns>The value of the property.  If not found, the name is returned.</returns>
         public static string EvaluateProperty(string name)
         {
-            Debug.Assert(s_CachedValues != null, "ResourceManagerConfig.GetGlobalVar - s_cachedValues == null.");
+            Debug.Assert(s_cancheDict != null, "ResourceManagerConfig.GetGlobalVar - s_cachedValues == null.");
 
             if (string.IsNullOrEmpty(name))
                 return string.Empty;
 
             string cachedValue;
-            if (s_CachedValues.TryGetValue(name, out cachedValue))
+            if (s_cancheDict.TryGetValue(name, out cachedValue))
                 return cachedValue;
 
             int i = name.LastIndexOf('.');
@@ -90,7 +90,7 @@ namespace UnityEngine.AddressableAssets.Initialization
                         var v = pi.GetValue(null, null);
                         if (v != null)
                         {
-                            s_CachedValues.Add(name, v.ToString());
+                            s_cancheDict.Add(name, v.ToString());
                             return v.ToString();
                         }
                     }
@@ -100,7 +100,7 @@ namespace UnityEngine.AddressableAssets.Initialization
                         var v = fi.GetValue(null);
                         if (v != null)
                         {
-                            s_CachedValues.Add(name, v.ToString());
+                            s_cancheDict.Add(name, v.ToString());
                             return v.ToString();
                         }
                     }
@@ -133,6 +133,29 @@ namespace UnityEngine.AddressableAssets.Initialization
         /// <returns>The evaluated string.</returns>
         public static string EvaluateString(string inputString, char startDelimiter, char endDelimiter, Func<string, string> varFunc)
         {
+            /*
+            if (string.IsNullOrEmpty(inputString))
+                return string.Empty;
+
+            // 最初角色如果是嵌套的{{}}结构，肯定会出现问题
+            // 后来发现这里是循环，而且{{}}这种即使中途不匹配也不影响最终输出
+            while (true)
+            {
+                int i = inputString.IndexOf(startDelimiter);
+                if (i < 0)
+                    return inputString;
+                int e = inputString.IndexOf(endDelimiter, i + 1);
+                if (e < i)
+                    return inputString;
+                // 获取包含在{}的的内容
+                var token = inputString.Substring(i + 1, e - i - 1);
+                // 使用varFunc对内容解析
+                var tokenVal = varFunc == null ? string.Empty : varFunc(token);
+                // 重新拼接{之前的内容 和 上述内容 和 }之后的内容
+                inputString = inputString.Substring(0, i) + tokenVal + inputString.Substring(e + 1);
+            }
+            */
+            
             if (string.IsNullOrEmpty(inputString))
                 return string.Empty;
 

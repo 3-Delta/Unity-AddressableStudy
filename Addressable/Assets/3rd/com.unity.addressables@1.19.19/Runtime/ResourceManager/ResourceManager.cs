@@ -261,16 +261,6 @@ namespace UnityEngine.ResourceManagement
         }
 
         /// <summary>
-        /// Clears out the diagnostics callback handler.
-        /// </summary>
-        [Obsolete("ClearDiagnosticsCallback is Obsolete, use ClearDiagnosticCallbacks instead.")]
-        public void ClearDiagnosticsCallback()
-        {
-            m_diagnosticsHandler = null;
-            m_obsoleteDiagnosticsHandler = null;
-        }
-
-        /// <summary>
         /// Clears out the diagnostics callbacks handler.
         /// </summary>
         public void ClearDiagnosticCallbacks()
@@ -289,16 +279,6 @@ namespace UnityEngine.ResourceManagement
                 m_diagnosticsHandler -= func;
             else
                 Debug.LogError("No Diagnostic callbacks registered, cannot remove callback.");
-        }
-
-        /// <summary>
-        /// Register a handler for diagnostic events.
-        /// </summary>
-        /// <param name="func">The event handler function.</param>
-        [Obsolete]
-        public void RegisterDiagnosticCallback(Action<AsyncOperationHandle, ResourceManager.DiagnosticEventType, int, object> func)
-        {
-            m_obsoleteDiagnosticsHandler = func;
         }
 
         /// <summary>

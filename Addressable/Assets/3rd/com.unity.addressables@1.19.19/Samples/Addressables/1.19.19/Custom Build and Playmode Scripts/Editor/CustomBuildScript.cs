@@ -108,7 +108,7 @@ public class CustomBuildScript : BuildScriptBase
             DisableCatalogUpdateOnStartup = aaSettings.DisableCatalogUpdateOnStartup,
             IsLocalCatalogInBundle = aaSettings.BundleLocalCatalog,
 #if UNITY_2019_3_OR_NEWER
-            AddressablesVersion = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(Addressables).Assembly)?.version,
+            AddressablesVersion = "1.19.19",
 #endif
             MaxConcurrentWebRequests = aaSettings.MaxConcurrentWebRequests,
             CatalogRequestsTimeout = aaSettings.CatalogRequestsTimeout

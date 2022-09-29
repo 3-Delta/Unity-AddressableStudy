@@ -32,22 +32,7 @@ namespace UnityEngine.AddressableAssets
             m_DerivedClassType = typeof(TObject);
 #endif
         }
-
-        /// <summary>
-        /// Load the referenced asset as type TObject.
-        /// This cannot be used a second time until the first load is released. If you wish to call load multiple times
-        /// on an AssetReference, use <see cref="Addressables.LoadAssetAsync{TObject}(object)"/> and pass your AssetReference in as the key.
-        ///
-        /// See the [Loading Addressable Assets](xref:addressables-api-load-asset-async) documentation for more details.
-        /// </summary>
-        /// <returns>The load operation.</returns>
-        //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> LoadAssetAsync(*)", true)]
-        [Obsolete]
-        public AsyncOperationHandle<TObject> LoadAsset()
-        {
-            return LoadAssetAsync();
-        }
-
+        
         /// <summary>
         /// Load the referenced asset as type TObject.
         /// This cannot be used a second time until the first load is released. If you wish to call load multiple times
@@ -471,70 +456,7 @@ namespace UnityEngine.AddressableAssets
             Addressables.InitializeAsync();
             return Addressables.ResourceManager.CreateCompletedOperation(default(T), new Exception("Attempting to load an asset reference that has no asset assigned to it.").Message);
         }
-
-        /// <summary>
-        /// Load the referenced asset as type TObject.
-        /// This cannot be used a second time until the first load is released. If you wish to call load multiple times
-        /// on an AssetReference, use <see cref="Addressables.LoadAssetAsync{TObject}(object)"/> and pass your AssetReference in as the key.
-        ///
-        /// See the [Loading Addressable Assets](xref:addressables-api-load-asset-async) documentation for more details.
-        /// </summary>
-        /// <typeparam name="TObject">The object type.</typeparam>
-        /// <returns>The load operation.</returns>
-        //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> LoadAssetAsync(*)", true)]
-        [Obsolete]
-        public AsyncOperationHandle<TObject> LoadAsset<TObject>()
-        {
-            return LoadAssetAsync<TObject>();
-        }
-
-        /// <summary>
-        /// Loads the reference as a scene.
-        /// This cannot be used a second time until the first load is released. If you wish to call load multiple times
-        /// on an AssetReference, use Addressables.LoadSceneAsync() and pass your AssetReference in as the key.
-        /// See the [Loading Addressable Assets](xref:addressables-api-load-asset-async) documentation for more details.
-        /// </summary>
-        /// <returns>The operation handle for the scene load.</returns>
-        //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> LoadSceneAsync(*)", true)]
-        [Obsolete]
-        public AsyncOperationHandle<SceneInstance> LoadScene()
-        {
-            return LoadSceneAsync();
-        }
-
-        /// <summary>
-        /// InstantiateAsync the referenced asset as type TObject.
-        /// This cannot be used a second time until the first load is released. If you wish to call load multiple times
-        /// on an AssetReference, use Addressables.InstantiateAsync() and pass your AssetReference in as the key.
-        /// See the [Loading Addressable Assets](xref:addressables-api-load-asset-async) documentation for more details.
-        /// </summary>
-        /// <param name="position">Position of the instantiated object.</param>
-        /// <param name="rotation">Rotation of the instantiated object.</param>
-        /// <param name="parent">The parent of the instantiated object.</param>
-        /// <returns>Returns the instantiation operation.</returns>
-        //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> InstantiateAsync(*)", true)]
-        [Obsolete]
-        public AsyncOperationHandle<GameObject> Instantiate(Vector3 position, Quaternion rotation, Transform parent = null)
-        {
-            return InstantiateAsync(position, rotation, parent);
-        }
-
-        /// <summary>
-        /// InstantiateAsync the referenced asset as type TObject.
-        /// This cannot be used a second time until the first load is released. If you wish to call load multiple times
-        /// on an AssetReference, use Addressables.InstantiateAsync() and pass your AssetReference in as the key.
-        /// See the [Loading Addressable Assets](xref:addressables-api-load-asset-async) documentation for more details.
-        /// </summary>
-        /// <param name="parent">The parent of the instantiated object.</param>
-        /// <param name="instantiateInWorldSpace">Option to retain world space when instantiated with a parent.</param>
-        /// <returns>Returns the instantiation operation.</returns>
-        //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> InstantiateAsync(*)", true)]
-        [Obsolete]
-        public AsyncOperationHandle<GameObject> Instantiate(Transform parent = null, bool instantiateInWorldSpace = false)
-        {
-            return InstantiateAsync(parent, instantiateInWorldSpace);
-        }
-
+        
         /// <summary>
         /// Load the referenced asset as type TObject.
         /// This cannot be used a second time until the first load is released. If you wish to call load multiple times

@@ -68,6 +68,7 @@ namespace UnityEngine.AddressableAssets
     public class PlatformMappingService
     {
 #if UNITY_EDITOR
+        // BuildTarget和AddressablesPlatform 关系
         internal static readonly Dictionary<BuildTarget, AddressablesPlatform> s_BuildTargetMapping =
             new Dictionary<BuildTarget, AddressablesPlatform>()
         {
@@ -84,6 +85,7 @@ namespace UnityEngine.AddressableAssets
             {BuildTarget.WSAPlayer, AddressablesPlatform.WindowsUniversal},
         };
 #endif
+        // RuntimePlatform和AddressablesPlatform 关系
         internal static readonly Dictionary<RuntimePlatform, AddressablesPlatform> s_RuntimeTargetMapping =
             new Dictionary<RuntimePlatform, AddressablesPlatform>()
         {
@@ -133,21 +135,7 @@ namespace UnityEngine.AddressableAssets
                 return s_RuntimeTargetMapping[platform].ToString();
             return platform.ToString();
         }
-
-        /// <summary>
-        /// Retrieves the Addressables build platform that is being used.
-        /// </summary>
-        /// <returns>Returns the Addressables build platform that is being used.</returns>
-        [Obsolete("This API doesn't adapt to the addition of new platforms.  Use GetPlatformPathSubFolder instead.")]
-        public static AddressablesPlatform GetPlatform()
-        {
-#if UNITY_EDITOR
-            return GetAddressablesPlatformInternal(EditorUserBuildSettings.activeBuildTarget);
-#else
-            return GetAddressablesPlatformInternal(Application.platform);
-#endif
-        }
-
+        
         /// <summary>
         /// Retrieves the Addressables platform subfolder of the build platform that is being used.
         /// </summary>

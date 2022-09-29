@@ -56,7 +56,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             Directory.CreateDirectory(directory);
             PackageManager.PackageInfo info = PackageManager.PackageInfo.FindForAssembly(typeof(BuildScriptBase).Assembly);
-            log.AddMetaData(info.name, info.version);
+            log.AddMetaData("com.unity.addressables", "1.19.19");
             File.WriteAllText(Path.Combine(directory, "AddressablesBuildTEP.json"), log.FormatForTraceEventProfiler());
         }
 

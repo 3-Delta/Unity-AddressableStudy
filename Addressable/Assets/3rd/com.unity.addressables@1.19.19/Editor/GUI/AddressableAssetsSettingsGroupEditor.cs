@@ -229,7 +229,8 @@ namespace UnityEditor.AddressableAssets.GUI
                     GUILayout.Space((spaceBetween * 2f)+8);
 
                 {
-                    string playmodeButtonName = toolbarPos.width < 300 ? "Play Mode" : "Play Mode Script";
+                    // 资源加载策略
+                    string playmodeButtonName = "Load";
                     var guiMode = new GUIContent(playmodeButtonName);
                     Rect rMode = GUILayoutUtility.GetRect(guiMode, EditorStyles.toolbarDropDown);
                     if (EditorGUI.DropdownButton(rMode, guiMode, FocusType.Passive, EditorStyles.toolbarDropDown))
@@ -250,6 +251,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     }
                 }
 
+                // 资源构建策略
                 var guiBuild = new GUIContent("Build");
                 Rect rBuild = GUILayoutUtility.GetRect(guiBuild, EditorStyles.toolbarDropDown);
                 if (EditorGUI.DropdownButton(rBuild, guiBuild, FocusType.Passive, EditorStyles.toolbarDropDown))

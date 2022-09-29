@@ -775,19 +775,6 @@ namespace UnityEditor.AddressableAssets.Settings
         [SerializeField]
         List<AddressableAssetGroupSchemaTemplate> m_SchemaTemplates = new List<AddressableAssetGroupSchemaTemplate>();
 
-        /// <summary>
-        /// Remove  the schema at the specified index.
-        /// </summary>
-        /// <param name="index">The index to remove at.</param>
-        /// <param name="postEvent">Indicates if an even should be posted to the Addressables event system for this change.</param>
-        /// <returns>True if the schema was removed.</returns>
-        [Obsolete("GroupSchemaTemplates are deprecated, use GroupTemplateObjects")]
-        public bool RemoveSchemaTemplate(int index, bool postEvent = true)
-        {
-            Debug.LogError("GroupSchemaTemplates are deprecated, use GroupTemplateObjects");
-            return false;
-        }
-
         [SerializeField]
         List<ScriptableObject> m_GroupTemplateObjects = new List<ScriptableObject>();
 

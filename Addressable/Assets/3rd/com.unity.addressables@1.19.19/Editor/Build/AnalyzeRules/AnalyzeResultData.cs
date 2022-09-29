@@ -7,29 +7,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     /// <summary>
     /// Represents the data acquired after analyzing Addressable assets.
     /// </summary>
-    [Obsolete("This has been made obsolete and is no longer functional.  Analyze result data is handled internally.")]
-    public class AnalyzeResultData : ScriptableObject, ISerializationCallbackReceiver
-    {
-        /// <summary>
-        /// Retrieves serialized data after a domain reload.
-        /// </summary>
-        public void OnAfterDeserialize()
-        {
-            //Do nothing
-        }
-
-        /// <summary>
-        /// Converts our data to a serialized structure before a domain reload.
-        /// </summary>
-        public void OnBeforeSerialize()
-        {
-            //Do nothing
-        }
-    }
-
-    /// <summary>
-    /// Represents the data acquired after analyzing Addressable assets.
-    /// </summary>
     [Serializable]
     public class AddressablesAnalyzeResultData : ISerializationCallbackReceiver
     {

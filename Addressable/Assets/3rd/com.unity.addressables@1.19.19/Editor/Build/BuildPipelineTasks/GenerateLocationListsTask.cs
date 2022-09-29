@@ -275,22 +275,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             output.BundleToExpandedBundleDependencies = bundleToEntry.Values.ToDictionary(x => x.BundleName, x => x.ExpandedDependencies.Where(y => !x.Dependencies.Contains(y)).Select(y => y.BundleName).ToList());
             return output;
         }
-
-        /// <summary>
-        /// Runs the build task with a give context and write data.
-        /// </summary>
-        /// <param name="aaBuildContext">The addressables build context.</param>
-        /// <param name="writeData">The write data used to generate the location lists.</param>
-        /// <returns>The success or failure ReturnCode</returns>
-        [Obsolete("This method uses nonoptimized code. Use nonstatic version Run() instead.")]
-        public static ReturnCode Run(IAddressableAssetsBuildContext aaBuildContext, IBundleWriteData writeData)
-        {
-            var task = new GenerateLocationListsTask();
-            task.m_AaBuildContext = aaBuildContext;
-            task.m_WriteData = writeData;
-            return task.Run();
-        }
-
+        
         internal static string GetBundleProviderName(AddressableAssetGroup group)
         {
             return group.GetSchema<BundledAssetGroupSchema>().GetBundleCachedProviderId();

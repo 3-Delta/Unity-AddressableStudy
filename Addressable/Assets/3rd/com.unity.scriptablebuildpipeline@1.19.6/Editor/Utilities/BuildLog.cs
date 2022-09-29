@@ -77,9 +77,9 @@ namespace UnityEditor.Build.Pipeline.Utilities
             {
                 AddMetaData("UnityVersion", UnityEngine.Application.unityVersion);
 #if UNITY_2019_2_OR_NEWER // PackageManager package inspection APIs didn't exist until 2019.2
-                PackageManager.PackageInfo info = PackageManager.PackageInfo.FindForAssembly(typeof(BuildLog).Assembly);
-                if (info != null)
-                    AddMetaData(info.name, info.version);
+                // PackageManager.PackageInfo info = PackageManager.PackageInfo.FindForAssembly(typeof(BuildLog).Assembly);
+                // if (info != null)
+                    AddMetaData("com.unity.scriptablebuildpipeline", "1.19.6");
 #endif
             }
         }

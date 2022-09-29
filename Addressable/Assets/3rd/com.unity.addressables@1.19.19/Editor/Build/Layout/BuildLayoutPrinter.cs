@@ -213,9 +213,9 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
                 writer.WriteLine("WARNING! The formatting in this file may change in future package versions.");
                 writer.WriteLine($"Unity Version: {UnityEngine.Application.unityVersion}");
-                PackageManager.PackageInfo info = PackageManager.PackageInfo.FindForAssembly(typeof(BuildLayoutPrinter).Assembly);
-                if (info != null)
-                    writer.WriteLine($"{info.name}: {info.version}");
+                // PackageManager.PackageInfo info = PackageManager.PackageInfo.FindForAssembly(typeof(BuildLayoutPrinter).Assembly);
+                // if (info != null)
+                    writer.WriteLine("com.unity.addressables: 1.19.19");
 
                 WriteSummary(writer, layout);
                 writer.WriteLine("");

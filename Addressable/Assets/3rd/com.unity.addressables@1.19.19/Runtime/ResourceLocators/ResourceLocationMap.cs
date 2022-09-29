@@ -38,7 +38,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             if (locations == null)
                 return;
             Locations = new Dictionary<object, IList<IResourceLocation>>(locations.Count * 2);
-            var locMap = new Dictionary<string, ResourceLocationBase>();
+            var checkDuplicateMap = new Dictionary<string, ResourceLocationBase>();
             var dataMap = new Dictionary<string, ResourceLocationData>();
             //create and collect locations
             for (int i = 0; i < locations.Count; i++)
@@ -49,29 +49,29 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     Addressables.LogErrorFormat("Address with id '{0}' does not have any valid keys, skipping...", rlData.InternalId);
                     continue;
                 }
-                if (locMap.ContainsKey(rlData.Keys[0]))
+                if (checkDuplicateMap.ContainsKey(rlData.Keys[0]))
                 {
                     Addressables.LogErrorFormat("Duplicate address '{0}' with id '{1}' found, skipping...", rlData.Keys[0], rlData.InternalId);
                     continue;
                 }
                 var loc = new ResourceLocationBase(rlData.Keys[0], Addressables.ResolveInternalId(rlData.InternalId), rlData.Provider, rlData.ResourceType);
                 loc.Data = rlData.Data;
-                locMap.Add(rlData.Keys[0], loc);
+                checkDuplicateMap.Add(rlData.Keys[0], loc);
                 dataMap.Add(rlData.Keys[0], rlData);
             }
 
             //fix up dependencies between them
-            foreach (var kvp in locMap)
+            foreach (var kvp in checkDuplicateMap)
             {
                 var data = dataMap[kvp.Key];
                 if (data.Dependencies != null)
                 {
                     foreach (var d in data.Dependencies)
-                        kvp.Value.Dependencies.Add(locMap[d]);
+                        kvp.Value.Dependencies.Add(checkDuplicateMap[d]);
                     kvp.Value.ComputeDependencyHash();
                 }
             }
-            foreach (KeyValuePair<string, ResourceLocationBase> kvp in locMap)
+            foreach (KeyValuePair<string, ResourceLocationBase> kvp in checkDuplicateMap)
             {
                 ResourceLocationData rlData = dataMap[kvp.Key];
                 foreach (var k in rlData.Keys)
