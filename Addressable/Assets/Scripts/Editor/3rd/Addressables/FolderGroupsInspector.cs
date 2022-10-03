@@ -40,3 +40,4 @@ public class FolderGroupsInspector : Editor {
 }
 
 // 参考 AddressableAssetSettingsInspector
+// BundleNamingStylePropertyDrawer : PropertyDrawer

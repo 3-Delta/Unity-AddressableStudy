@@ -408,7 +408,7 @@ namespace UnityEditor.AddressableAssets.Build
             else
                 Directory.CreateDirectory(assetPath);
 
-            var path = Path.Combine(assetPath, "addressables_content_state.bin");
+            var path = Path.Combine(assetPath, "LastAA_ContentBuild_State.bin");
             return path;
         }
 
@@ -429,7 +429,7 @@ namespace UnityEditor.AddressableAssets.Build
             var cacheData = formatter.Deserialize(stream) as AddressablesContentState;
             if (cacheData == null)
             {
-                Addressables.LogError("Invalid hash data file.  This file is usually named addressables_content_state.bin and is saved in the same folder as your source AddressableAssetsSettings.asset file.");
+                Addressables.LogError("Invalid hash data file.  This file is usually named LastAA_ContentBuild_State.bin and is saved in the same folder as your source AddressableAssetsSettings.asset file.");
                 return null;
             }
             stream.Dispose();

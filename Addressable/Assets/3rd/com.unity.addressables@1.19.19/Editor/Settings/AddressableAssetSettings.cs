@@ -136,6 +136,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
         /// <summary>
         /// Options for building Addressables when building a player.
+        /// 构建player之前是否构建AA
         /// </summary>
         public enum PlayerBuildOption
         {
@@ -640,15 +641,15 @@ namespace UnityEditor.AddressableAssets.Settings
             set { m_RemoteCatalogLoadPath = value; }
         }
 
-        [SerializeField]
-        private string m_ContentStateBuildPath = "";
+        [FormerlySerializedAs("m_ContentStateBuildPath")] [SerializeField]
+        private string m_LastAAContentBuildPath = "";
         /// <summary>
-        /// The path used for saving the addressables_content_state.bin file.  If empty, this will be the addressable settings config folder in your project.
+        /// The path used for saving the LastAA_ContentBuild_State.bin file.  If empty, this will be the addressable settings config folder in your project.
         /// </summary>
-        public string ContentStateBuildPath
+        public string LastAAContentBuildPath
         {
-            get { return m_ContentStateBuildPath; }
-            set { m_ContentStateBuildPath = value; }
+            get { return this.m_LastAAContentBuildPath; }
+            set { this.m_LastAAContentBuildPath = value; }
         }
         
         [SerializeField]
@@ -671,8 +672,8 @@ namespace UnityEditor.AddressableAssets.Settings
         internal string GetContentStateBuildPath()
         {
             string p = ConfigFolder;
-            if (!string.IsNullOrEmpty(m_ContentStateBuildPath))
-                p = m_ContentStateBuildPath;
+            if (!string.IsNullOrEmpty(this.m_LastAAContentBuildPath))
+                p = this.m_LastAAContentBuildPath;
             p = Path.Combine(p, PlatformMappingService.GetPlatformPathSubFolder());
             return p;
         }

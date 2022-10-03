@@ -230,7 +230,9 @@ namespace UnityEditor.AddressableAssets.GUI
 
                 {
                     // 资源加载策略
-                    string playmodeButtonName = "Load";
+                    // https://docs.unity3d.com/Packages/com.unity.addressables@1.19/manual/Groups.html
+                    // how Addressables are loaded in the Editor Play mode
+                    string playmodeButtonName = "LoadInEditor";
                     var guiMode = new GUIContent(playmodeButtonName);
                     Rect rMode = GUILayoutUtility.GetRect(guiMode, EditorStyles.toolbarDropDown);
                     if (EditorGUI.DropdownButton(rMode, guiMode, FocusType.Passive, EditorStyles.toolbarDropDown))
@@ -239,6 +241,7 @@ namespace UnityEditor.AddressableAssets.GUI
                         for (int i = 0; i < settings.DataBuilders.Count; i++)
                         {
                             var m = settings.GetDataBuilder(i);
+                            // https://docs.unity3d.com/Packages/com.unity.addressables@1.19/manual/AddressableAssetSettings.html
                             if (m.CanBuildData<AddressablesPlayModeBuildResult>())
                             {
                                 string text = m is Build.DataBuilders.BuildScriptPackedPlayMode ?
@@ -262,6 +265,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     for (int i = 0; i < settings.DataBuilders.Count; i++)
                     {
                         var m = settings.GetDataBuilder(i);
+                        // https://docs.unity3d.com/Packages/com.unity.addressables@1.19/manual/AddressableAssetSettings.html
                         if (m.CanBuildData<AddressablesPlayerBuildResult>())
                         {
                             AddressablesPlayerBuildResultBuilderExists = true;

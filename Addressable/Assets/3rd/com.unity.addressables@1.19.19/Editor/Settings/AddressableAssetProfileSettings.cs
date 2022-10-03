@@ -166,6 +166,7 @@ namespace UnityEditor.AddressableAssets.Settings
         internal List<BuildProfile> profiles { get { return m_Profiles; } }
 
         [Serializable]
+        // id：name的映射
         internal class ProfileIdData
         {
             [FormerlySerializedAs("m_id")]
@@ -589,7 +590,7 @@ namespace UnityEditor.AddressableAssets.Settings
             return m_Profiles.Find(p => p.id == profileId);
         }
 
-        internal string GetVariableId(string variableName)
+        public string GetVariableId(string variableName)
         {
             foreach (var idPair in profileEntryNames)
             {

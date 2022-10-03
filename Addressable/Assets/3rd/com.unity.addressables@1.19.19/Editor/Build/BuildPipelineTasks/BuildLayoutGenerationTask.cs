@@ -59,7 +59,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         internal Dictionary<string, string> m_BundleNameRemap;
 
-        internal static string m_LayoutTextFile = Addressables.LibraryPath + "/buildlayout.txt";
+        internal static string m_LayoutTextFile = Addressables.LibraryPath + "/AABuildResult.txt";
 
         static AssetBucket GetOrCreate(Dictionary<string, AssetBucket> buckets, string asset)
         {

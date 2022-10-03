@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Build;
@@ -45,30 +48,79 @@ public class AddressableGroupBuilder {
         return aaSettings;
     }
 
-    [MenuItem("__Tools__/Addressables/RebuildGroups")]
-    public static void RebuildGroups() {
+    [MenuItem("__Tools__/Addressables/RebuildGroups(remote)")]
+    public static void RebuildGroupsForRemote() {
         AddressableAssetSettings aaSettings = ClearGroups();
         FolderGroups fg = FolderGroups.Load("Assets/AddressableAssetsData/FolderGroups.asset");
-        BuildGroups(fg, aaSettings);
+        BuildGroups(fg, aaSettings, false);
     }
 
-    public static void BuildGroups(FolderGroups fg, AddressableAssetSettings aaSettings) {
+    [MenuItem("__Tools__/Addressables/RebuildGroups(local)")]
+    public static void RebuildGroupsForLocal() {
+        AddressableAssetSettings aaSettings = ClearGroups();
+        FolderGroups fg = FolderGroups.Load("Assets/AddressableAssetsData/FolderGroups.asset");
+        BuildGroups(fg, aaSettings, true);
+    }
+
+    public static void BuildGroups(FolderGroups fg, AddressableAssetSettings aaSettings, bool setAsLocalOrRemote = true) {
         var folders = fg.ValidGroups;
+        HashSet<string> fixedAssets = new HashSet<string>();
+        List<string> ignoreAssets = new List<string>();
+        // assetPath:refCount
+        Dictionary<string, int> dependencyDict = new Dictionary<string, int>();
         for (int i = 0, length = folders.Count; i < length; ++i) {
             var folder = folders[i];
             var files = folder.GetFiles();
-            var group = CreateGroup(folder, aaSettings);
+            var group = CreateGroup(folder, aaSettings, setAsLocalOrRemote);
+
             for (int j = files.Count - 1; j >= 0; --j) {
-                CreateEntries(group, aaSettings, files[j], folder);
+                var fileFullPath = files[j];
+                CreateEntries(group, aaSettings, fileFullPath, folder);
+
+                if (fg.includeDependency) {
+                    var assetPath = PathUtils.GetAssetPath(fileFullPath);
+                    if (!fixedAssets.Contains(assetPath)) {
+                        fixedAssets.Add(assetPath);
+                    }
+                }
             }
         }
 
-        AddressableAssetGroup CreateGroup(FolderGroups.FolderGroup folder, AddressableAssetSettings aaSettings) {
+        if (fg.includeDependency) {
+            CollectDependencies(in fixedAssets, dependencyDict, ignoreAssets);
+
+            // 打印过滤文件
+            foreach (var asset in ignoreAssets) {
+                Debug.Log("过滤了文件/文件夹: " + asset);
+            }
+
+            foreach (var kvp in dependencyDict) {
+                // refCount >= 2
+                if (kvp.Value >= 2) { }
+            }
+        }
+
+        AddressableAssetGroup CreateGroup(FolderGroups.FolderGroup folder, AddressableAssetSettings aaSettings, bool setAsLocalOrRemote) {
             string groupName = folder.FolderName;
             var group = aaSettings.FindGroup(groupName);
             if (group == null) {
+                // https://docs.unity3d.com/Packages/com.unity.addressables@1.19/manual/GroupSettings.html
+                // When you create a group with the Packed Assets template, the Content Packing & Loading and Content Update Restriction schemas define the settings for the group.
                 group = aaSettings.CreateGroup(groupName, false, false, false, null, typeof(BundledAssetGroupSchema), typeof(ContentUpdateGroupSchema));
                 var schemaBundle = group.GetSchema<BundledAssetGroupSchema>();
+
+                // 获取当前的profile
+                // aaSettings.profileSettings.GetProfile(aaSettings.activeProfileId);
+
+                if (setAsLocalOrRemote) {
+                    schemaBundle.BuildPath.SetVariableByName(aaSettings, AddressableAssetSettings.kLocalBuildPath);
+                    schemaBundle.LoadPath.SetVariableByName(aaSettings, AddressableAssetSettings.kLocalLoadPath);
+                }
+                else {
+                    schemaBundle.BuildPath.SetVariableByName(aaSettings, AddressableAssetSettings.kRemoteBuildPath);
+                    schemaBundle.LoadPath.SetVariableByName(aaSettings, AddressableAssetSettings.kRemoteLoadPath);
+                }
+
                 schemaBundle.UseAssetBundleCrc = false; // 关闭crc
                 schemaBundle.UseAssetBundleCache = true;
                 schemaBundle.UseAssetBundleCrcForCachedBundles = true;
@@ -77,27 +129,62 @@ public class AddressableGroupBuilder {
                 schemaBundle.Timeout = 10;
                 schemaBundle.AssetBundledCacheClearBehavior = BundledAssetGroupSchema.CacheClearBehavior.ClearWhenSpaceIsNeededInCache;
                 schemaBundle.InternalIdNamingMode = BundledAssetGroupSchema.AssetNamingMode.FullPath;
-
+                schemaBundle.BundleNaming = BundledAssetGroupSchema.BundleNamingStyle.FileNameHash; // hash作为bundle name
+                schemaBundle.BundleMode = folder.allInOne ? BundledAssetGroupSchema.BundlePackingMode.PackTogether : BundledAssetGroupSchema.BundlePackingMode.PackSeparately;
+                
                 var schemaContent = group.GetSchema<ContentUpdateGroupSchema>();
                 schemaContent.StaticContent = false; // 重定向StreamAssets
-
-                schemaBundle.BundleNaming = BundledAssetGroupSchema.BundleNamingStyle.FileNameHash; // hash作为bundle name
-                schemaBundle.BuildPath.SetVariableByName(aaSettings, AddressableAssetSettings.kLocalBuildPath);
-                schemaBundle.LoadPath.SetVariableByName(aaSettings, AddressableAssetSettings.kLocalLoadPath);
-                schemaBundle.BundleMode = folder.allInOne ? BundledAssetGroupSchema.BundlePackingMode.PackTogether : BundledAssetGroupSchema.BundlePackingMode.PackSeparately;
             }
 
             return group;
         }
 
         void CreateEntries(AddressableAssetGroup group, AddressableAssetSettings aaSettings, string fileFullPath, FolderGroups.FolderGroup folder) {
-            var prefix = aaSettings.profileSettings.GetValueByKeyName("AddressableResourcesAssetPath", "Default");
-            var assetPath = fileFullPath.Replace(Application.dataPath, "Assets");
+            var assetPath = PathUtils.GetAssetPath(fileFullPath);
             var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
             var entry = aaSettings.CreateOrMoveEntry(assetGuid, group);
-            if (entry != null) {
-                string path = assetPath.Replace($"{prefix}/{folder.FolderName}/", "");
-                entry.address = path;
+            var prefix = aaSettings.profileSettings.GetValueByKeyName("AddressableResourcesAssetPath", "Default");
+            string path = assetPath.Replace($"{prefix}/{folder.FolderName}/", "");
+            entry.address = path;
+        }
+
+        void CollectDependencies(in HashSet<string> fixedAssets, Dictionary<string, int> dependencyDict, List<string> ignoreAssets) {
+            foreach (var assetPath in fixedAssets) {
+                Collect(assetPath, in fixedAssets, dependencyDict, ignoreAssets);
+            }
+        }
+
+        void Collect(string assetPath, in HashSet<string> fixedAssets, Dictionary<string, int> dependencyDict, List<string> ignoreAssets) {
+            // EditorUtility.CollectDependencies
+            string[] deps = AssetDatabase.GetDependencies(assetPath, false);
+            for (int i = 0, length = deps.Length; i < length; ++i) {
+                var depAssetPath = deps[i];
+                if (assetPath.Equals(depAssetPath, StringComparison.Ordinal)) {
+                    continue;
+                }
+
+                // 已经存在
+                if (fixedAssets.Contains(depAssetPath)) {
+                    continue;
+                }
+
+                // 文件夾过滤
+                if (depAssetPath.Contains("Gizmos", StringComparison.Ordinal) || depAssetPath.Contains("Editor", StringComparison.Ordinal) || depAssetPath.Contains("Plugins", StringComparison.Ordinal) || depAssetPath.Contains("Presets", StringComparison.Ordinal) || depAssetPath.Contains("BuildReports", StringComparison.Ordinal) ||
+                    // https://docs.unity3d.com/Packages/com.unity.addressables@1.19/manual/ManagingAssets.html
+                    // address不能使用resources下面的文件
+                    depAssetPath.Contains("Resources", StringComparison.Ordinal)) {
+                    ignoreAssets.Add(depAssetPath);
+                    continue;
+                }
+
+                // 文件过滤
+                if (depAssetPath.EndsWith(".cs", StringComparison.Ordinal) || depAssetPath.EndsWith(".dll", StringComparison.Ordinal) || depAssetPath.EndsWith(".so", StringComparison.Ordinal) || depAssetPath.EndsWith(".pdb", StringComparison.Ordinal)) {
+                    ignoreAssets.Add(depAssetPath);
+                    continue;
+                }
+
+                dependencyDict.TryGetValue(depAssetPath, out int refCount);
+                dependencyDict[depAssetPath] = refCount + 1;
             }
         }
     }
@@ -106,7 +193,7 @@ public class AddressableGroupBuilder {
     public static void DefauldBuild() {
         var builders = AddressableAssetSettingsDefaultObject.Settings.DataBuilders;
         int index = builders.IndexOf(builders.Find(s => s.GetType() == typeof(BuildScriptPackedMode)));
-        
+
         AddressableAssetSettingsDefaultObject.Settings.ActivePlayerDataBuilderIndex = index;
         AddressableAssetSettings.BuildPlayerContent();
     }

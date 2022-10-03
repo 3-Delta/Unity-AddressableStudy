@@ -42,7 +42,7 @@ public class RevertUnchangedAssetsToPreviousAssetState
         var aaContext = aaBuildContext as AddressableAssetsBuildContext;
         var groups = aaContext.Settings.groups.Where(group => group != null && group.HasSchema<BundledAssetGroupSchema>());
         if (updateContext.ContentState.cachedBundles == null)
-            UnityEngine.Debug.LogWarning($"ContentUpdateContext does not contain previous asset bundle info, remote static bundles that are updated will not be cacheable.  If this is needed, rebuild the shipped application state with the current version of addressables to update the addressables_content_state.bin file.  The updated addressables_content_state.bin file can be used to create the content update.");
+            UnityEngine.Debug.LogWarning($"ContentUpdateContext does not contain previous asset bundle info, remote static bundles that are updated will not be cacheable.  If this is needed, rebuild the shipped application state with the current version of addressables to update the LastAA_ContentBuild_State.bin file.  The updated LastAA_ContentBuild_State.bin file can be used to create the content update.");
 
         foreach (var assetGroup in groups)
         {

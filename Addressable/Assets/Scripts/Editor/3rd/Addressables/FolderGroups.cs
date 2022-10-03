@@ -17,7 +17,13 @@ public class FolderGroups : ScriptableObject {
         public bool allInOne = false;
 
         public string FolderName {
-            get { return folder.name; }
+            get {
+                if (folder) {
+                    return folder.name;
+                }
+
+                return null;
+            }
         }
 
         public string[] splitFilters {
@@ -25,7 +31,7 @@ public class FolderGroups : ScriptableObject {
         }
 
         public bool Valid {
-            get { return this.folder != null && Directory.Exists(this.FullPath); }
+            get { return Directory.Exists(this.FullPath); }
         }
 
         public string AssetPath {
@@ -48,7 +54,7 @@ public class FolderGroups : ScriptableObject {
                 return null;
             }
         }
-        
+
         public FolderGroup(DefaultAsset folder, string searchFilters, SearchOption searchOption = SearchOption.AllDirectories, bool allInOne = false) {
             this.folder = folder;
             this.searchFilters = searchFilters;
@@ -81,6 +87,12 @@ public class FolderGroups : ScriptableObject {
         }
     }
 
+    // refCount > 1的整理
+    public bool includeDependency = false;
+    // buildplayer的时候全部认为是local，转移到StreamingAsset下
+    // 如果后续有更新需求，则设置为remote
+    // remote资源，aa是用Unity的cache管理的，而我们需要将其存储在persistent下。
+    // public bool setAsLocalOrRemote = true;
     public List<FolderGroup> Groups = new List<FolderGroup>();
 
     public List<FolderGroup> ValidGroups {
@@ -94,6 +106,12 @@ public class FolderGroups : ScriptableObject {
 
             return ret;
         }
+    }
+
+    public bool Get(string folderName, out FolderGroup group) {
+        group = default;
+        var ret = this.Groups.Find(g => g.FolderName.Equals(folderName, StringComparison.Ordinal));
+        return ret != null;
     }
 
     public static FolderGroups Load(string assetPath) {

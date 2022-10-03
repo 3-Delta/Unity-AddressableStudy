@@ -148,7 +148,7 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_IgnoreUnsupportedFilesInBuild =
             new GUIContent("Ignore Invalid/Unsupported Files in Build", "If enabled, files that cannot be built will be ignored.");
         GUIContent m_ContentStateFileBuildPath =
-            new GUIContent("Content State Build Path", "The path used for saving the addressables_content_state.bin file. If empty, this will be the addressable settings config folder in your project.");
+            new GUIContent("Content State Build Path", "The path used for saving the LastAA_ContentBuild_State.bin file. If empty, this will be the addressable settings config folder in your project.");
         GUIContent m_ShaderBundleNaming =
             new GUIContent("Shader Bundle Naming Prefix", "This setting determines how the Unity built in shader bundle will be named during the build.  The recommended setting is Project Name Hash.");
         GUIContent m_ShaderBundleCustomNaming =
@@ -280,9 +280,9 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (disableCatalogOnStartup != m_AasTarget.DisableCatalogUpdateOnStartup)
                     m_QueuedChanges.Add(() => m_AasTarget.DisableCatalogUpdateOnStartup = disableCatalogOnStartup);
 
-                string contentStateBuildPath = EditorGUILayout.TextField(m_ContentStateFileBuildPath, m_AasTarget.ContentStateBuildPath);
-                if (contentStateBuildPath != m_AasTarget.ContentStateBuildPath)
-                    m_QueuedChanges.Add(() => m_AasTarget.ContentStateBuildPath = contentStateBuildPath);
+                string contentStateBuildPath = EditorGUILayout.TextField(m_ContentStateFileBuildPath, m_AasTarget.LastAAContentBuildPath);
+                if (contentStateBuildPath != m_AasTarget.LastAAContentBuildPath)
+                    m_QueuedChanges.Add(() => m_AasTarget.LastAAContentBuildPath = contentStateBuildPath);
 
                 bool buildRemoteCatalog = EditorGUILayout.Toggle(m_BuildRemoteCatalog, m_AasTarget.BuildRemoteCatalog);
                 if (buildRemoteCatalog != m_AasTarget.BuildRemoteCatalog)

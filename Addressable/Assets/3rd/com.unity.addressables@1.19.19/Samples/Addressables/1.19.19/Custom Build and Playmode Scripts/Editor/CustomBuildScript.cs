@@ -219,7 +219,7 @@ public class CustomBuildScript : BuildScriptBase
     {
         ExtractDataTask extractData = new ExtractDataTask();
         List<CachedAssetState> carryOverCachedState = new List<CachedAssetState>();
-        var tempPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + PlatformMappingService.GetPlatformPathSubFolder() + "/addressables_content_state.bin";
+        var tempPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + PlatformMappingService.GetPlatformPathSubFolder() + "LastAA_ContentBuild_State.bin";
 
         var playerBuildVersion = builderInput.PlayerVersion;
         if (m_AllBundleInputDefs.Count > 0)
