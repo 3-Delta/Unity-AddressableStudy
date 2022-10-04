@@ -121,19 +121,34 @@ public class AddressableGroupBuilder {
                     schemaBundle.LoadPath.SetVariableByName(aaSettings, AddressableAssetSettings.kRemoteLoadPath);
                 }
 
-                schemaBundle.UseAssetBundleCrc = false; // 关闭crc
+                // aa构建时包含此group
+                schemaBundle.IncludeInBuild = true;
+                
                 schemaBundle.UseAssetBundleCache = true;
-                schemaBundle.UseAssetBundleCrcForCachedBundles = true;
+                // catalog中记录资源的address，方面后面运行时可以根据address进行加载
+                // https://docs.unity3d.com/Packages/com.unity.addressables@1.19/manual/GetRuntimeAddress.html
+                schemaBundle.IncludeAddressInCatalog = true; 
                 schemaBundle.IncludeGUIDInCatalog = false;
+                // 不记录label, 应该会导致后面根据label加载资源的时候失败
+                schemaBundle.IncludeLabelsInCatalog = false;
+                
+                schemaBundle.UseAssetBundleCrc = false; // 关闭crc
+                schemaBundle.UseAssetBundleCrcForCachedBundles = true;
+
                 schemaBundle.RetryCount = 3;
                 schemaBundle.Timeout = 10;
                 schemaBundle.AssetBundledCacheClearBehavior = BundledAssetGroupSchema.CacheClearBehavior.ClearWhenSpaceIsNeededInCache;
-                schemaBundle.InternalIdNamingMode = BundledAssetGroupSchema.AssetNamingMode.FullPath;
-                schemaBundle.BundleNaming = BundledAssetGroupSchema.BundleNamingStyle.FileNameHash; // hash作为bundle name
+                // https://docs.unity3d.com/Packages/com.unity.addressables@1.19/manual/LoadingAssetBundles.html
+                // 默认情况下本地资源用AssetBundle.LoadFromFileAsync,远程资源用UnityWebRequest
+                schemaBundle.UseUnityWebRequestForLocalBundles = false;
+                schemaBundle.InternalIdNamingMode = BundledAssetGroupSchema.AssetNamingMode.FullPath; // bundle内部资源的命名模式
+                // AppendHash会有文件夹的层次结构
+                schemaBundle.BundleNaming = BundledAssetGroupSchema.BundleNamingStyle.AppendHash; // hash作为bundle name
+                // FileNameHash 平铺，同时bundle的命名只有hash
                 schemaBundle.BundleMode = folder.allInOne ? BundledAssetGroupSchema.BundlePackingMode.PackTogether : BundledAssetGroupSchema.BundlePackingMode.PackSeparately;
                 
                 var schemaContent = group.GetSchema<ContentUpdateGroupSchema>();
-                schemaContent.StaticContent = false; // 重定向StreamAssets
+                schemaContent.StaticContent = false; // 静态资源
             }
 
             return group;

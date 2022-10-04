@@ -145,6 +145,11 @@ namespace UnityEditor.AddressableAssets.Build
         /// </summary>
         [SerializeField]
         public CachedBundleState[] cachedBundles;
+
+        public string ToJson() {
+            var json = JsonUtility.ToJson(this);
+            return json;
+        }
     }
 
     /// <summary>
@@ -460,6 +465,11 @@ namespace UnityEditor.AddressableAssets.Build
         public static AddressablesPlayerBuildResult BuildContentUpdate(AddressableAssetSettings settings, string contentStateDataPath)
         {
             var cacheData = LoadContentState(contentStateDataPath);
+            
+            // 为了查看具体数据结构
+        	// var json = cacheData?.ToJson();
+            
+            // 使用bin文件的上次构建数据和本次的addressablesetting文件进行设置的比对，看是否发生了变动
             if (!IsCacheDataValid(settings, cacheData))
                 return null;
 

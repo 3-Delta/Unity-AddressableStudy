@@ -515,6 +515,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
         /// <summary>
         /// Tells Addressables if it should check for a Content Catalog Update during the initialization step.
+        /// 初始化阶段是否检测group的更新
         /// </summary>
         public bool DisableCatalogUpdateOnStartup
         {

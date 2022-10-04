@@ -22,6 +22,7 @@ namespace UnityEditor.AddressableAssets
             SessionState.SetBool(m_EditorInitializedBoolName, true);
         }
 
+        // editor启动的时候移除group中不合理的entries
         internal static void PurgeInvalidAssetEntries(AddressableAssetSettings settings)
         {
             if (settings == null) return;

@@ -48,6 +48,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// The list of catalog locations.
         /// </summary>
         public List<ContentCatalogDataEntry> locations;
+        
         /// <summary>
         /// Mapping of bundles to asset groups.
         /// </summary>
@@ -56,6 +57,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// Mapping of asset group to bundles.
         /// </summary>
         public Dictionary<AddressableAssetGroup, List<string>> assetGroupToBundles;
+        
         /// <summary>
         /// Set of provider types needed in this build.
         /// </summary>

@@ -396,6 +396,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         {
                             File.Copy(tempPath, contentStatePath, true);
                             builderInput.Registry.AddFile(contentStatePath);
+                            
+                            // 额外生成json文件，方便序列化
+                            var jsonFile = contentStatePath + ".json";
+                            File.Copy(tempPath, jsonFile, true);
+                            var cacheData = LoadContentState(jsonFile);
+                            File.WriteAllText(jsonFile, cacheData?.ToJson());
                         }
                         catch (UnauthorizedAccessException uae)
                         {
