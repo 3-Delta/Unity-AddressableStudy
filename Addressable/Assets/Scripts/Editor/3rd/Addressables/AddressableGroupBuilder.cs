@@ -123,6 +123,8 @@ public class AddressableGroupBuilder {
 
                 // aa构建时包含此group
                 schemaBundle.IncludeInBuild = true;
+                // 使用group.guid 和 Application.cloudProjectId同时控制
+                schemaBundle.InternalBundleIdMode = BundledAssetGroupSchema.BundleInternalIdMode.GroupGuidProjectIdHash;
                 
                 schemaBundle.UseAssetBundleCache = true;
                 // catalog中记录资源的address，方面后面运行时可以根据address进行加载
@@ -148,6 +150,7 @@ public class AddressableGroupBuilder {
                 schemaBundle.BundleMode = folder.allInOne ? BundledAssetGroupSchema.BundlePackingMode.PackTogether : BundledAssetGroupSchema.BundlePackingMode.PackSeparately;
                 
                 var schemaContent = group.GetSchema<ContentUpdateGroupSchema>();
+                // StaticContent = newType == ContentType.CannotChangePostRelease;
                 schemaContent.StaticContent = false; // 静态资源
             }
 

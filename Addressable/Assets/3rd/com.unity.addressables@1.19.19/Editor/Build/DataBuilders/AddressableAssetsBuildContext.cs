@@ -52,6 +52,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <summary>
         /// Mapping of bundles to asset groups.
         /// </summary>
+        // hashedAssetBundleName:group.guid
         public Dictionary<string, string> bundleToAssetGroup;
         /// <summary>
         /// Mapping of asset group to bundles.

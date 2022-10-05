@@ -70,6 +70,7 @@ namespace UnityEditor.Build.Pipeline.Injector
                 if (field.FieldType == typeof(IBuildContext))
                     injectionObject = context;
                 else if (!attr.Optional)
+                    // 来去BuildContext.cs
                     injectionObject = context.GetContextObject(field.FieldType);
                 else
                 {
@@ -78,6 +79,7 @@ namespace UnityEditor.Build.Pipeline.Injector
                     injectionObject = contextObject;
                 }
 
+                // 反射赋值操作
                 field.SetValue(obj, injectionObject);
             }
         }

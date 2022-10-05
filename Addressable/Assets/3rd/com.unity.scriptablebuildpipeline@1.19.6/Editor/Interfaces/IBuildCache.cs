@@ -11,12 +11,12 @@ namespace UnityEditor.Build.Pipeline.Interfaces
     public interface IBuildCache : IContextObject
     {
         /// <summary>
-        /// Gets a CacheEntry for an asset identified by its GUID.
+        /// Gets a CacheEntry for an assetGuid identified by its GUID.
         /// </summary>
-        /// <param name="asset">GUID identifier for an asset from the Asset Database</param>
+        /// <param name="assetGuid">GUID identifier for an assetGuid from the Asset Database</param>
         /// <param name="version">Version number of the system asking for an entry to distinguish it from previous incompatible entries. (Optional)</param>
-        /// <returns>CacheEntry representing current asset.</returns>
-        CacheEntry GetCacheEntry(GUID asset, int version = 1);
+        /// <returns>CacheEntry representing current assetGuid.</returns>
+        CacheEntry GetCacheEntry(GUID assetGuid, int version = 1);
 
         /// <summary>
         /// Gets a CacheEntry for a file identified by its relative path.

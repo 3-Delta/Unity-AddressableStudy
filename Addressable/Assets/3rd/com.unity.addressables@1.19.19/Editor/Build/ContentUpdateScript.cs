@@ -477,6 +477,7 @@ namespace UnityEditor.AddressableAssets.Build
             var context = new AddressablesDataBuilderInput(settings, cacheData.playerVersion);
             context.PreviousContentState = cacheData;
 
+            // 不删除Library/com.unity.addressables/aa/平台下的文件
             Cleanup(!s_StreamingAssetsExists, false);
 
             SceneManagerState.Record();
@@ -492,6 +493,7 @@ namespace UnityEditor.AddressableAssets.Build
             if (cacheData == null)
                 return false;
 
+            // 和已经打包的app比对，Unity版本变了
             if (cacheData.editorVersion != Application.unityVersion)
                 Addressables.LogWarningFormat("Building content update with Unity editor version `{0}`, data was created with version `{1}`.  This may result in incompatible data.", Application.unityVersion, cacheData.editorVersion);
 
@@ -506,6 +508,7 @@ namespace UnityEditor.AddressableAssets.Build
                 return false;
             }
 
+            // 和已经打包的app比对，远程加载目录变了
             if (cacheData.remoteCatalogLoadPath != settings.RemoteCatalogLoadPath.GetValue(settings))
             {
                 Addressables.LogErrorFormat("Current 'Remote Catalog Load Path' does not match load path of original player.  Player will only know to look up catalog at original location. Original: {0}  Current: {1}", cacheData.remoteCatalogLoadPath, settings.RemoteCatalogLoadPath.GetValue(settings));

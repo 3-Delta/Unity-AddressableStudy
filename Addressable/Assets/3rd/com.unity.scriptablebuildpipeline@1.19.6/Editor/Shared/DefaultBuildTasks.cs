@@ -84,9 +84,11 @@ namespace UnityEditor.Build.Pipeline
 
             // Setup
             buildTasks.Add(new SwitchToBuildPlatform());
+            // 构建atals
             buildTasks.Add(new RebuildSpriteAtlasCache());
 
             // Player Scripts
+            // 编译代码
             buildTasks.Add(new BuildPlayerScripts());
             buildTasks.Add(new PostScriptsCallback());
 
@@ -114,7 +116,9 @@ namespace UnityEditor.Build.Pipeline
 
             // Writing
             buildTasks.Add(new WriteSerializedFiles());
+            // 这里将buildcache -> temp, 同时处理cache的变更刷新
             buildTasks.Add(new ArchiveAndCompressBundles());
+            
             buildTasks.Add(new AppendBundleHash());
             buildTasks.Add(new GenerateLinkXml());
             buildTasks.Add(new PostWritingCallback());

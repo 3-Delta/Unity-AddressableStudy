@@ -67,6 +67,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <typeparam name="TResult">The type of data to build.</typeparam>
         /// <param name="builderInput">The builderInput object used in the build.</param>
         /// <returns>The build data result.</returns>
+        /// 增量构建 和 全量构建都在这儿，其实只是增量构建的参数builderInput中的PreviousContentState不为空而已
         public TResult BuildData<TResult>(AddressablesDataBuilderInput builderInput) where TResult : IDataBuilderResult
         {
             if (!CanBuildData<TResult>())

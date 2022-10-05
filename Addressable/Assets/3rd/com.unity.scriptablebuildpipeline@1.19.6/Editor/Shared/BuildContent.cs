@@ -115,11 +115,11 @@ namespace UnityEditor.Build.Pipeline
         /// <summary>
         /// Default constructor, takes a set of AssetBundleBuild and converts them to the appropriate properties.
         /// </summary>
-        /// <param name="bundleBuilds">The set of AssetbundleBuild to be built.</param>
-        public BundleBuildContent(IEnumerable<AssetBundleBuild> bundleBuilds)
+        /// <param name="abbs">The set of AssetbundleBuild to be built.</param>
+        public BundleBuildContent(IEnumerable<AssetBundleBuild> abbs)
         {
-            if (bundleBuilds == null)
-                throw new ArgumentNullException("bundleBuilds");
+            if (abbs == null)
+                throw new ArgumentNullException("abbs");
 
             Assets = new List<GUID>();
             Scenes = new List<GUID>();
@@ -130,15 +130,15 @@ namespace UnityEditor.Build.Pipeline
             AdditionalFiles = new Dictionary<string, List<ResourceFile>>();
 #endif
 
-            foreach (var bundleBuild in bundleBuilds)
+            foreach (var abb in abbs)
             {
                 List<GUID> guids;
-                BundleLayout.GetOrAdd(bundleBuild.assetBundleName, out guids);
+                BundleLayout.GetOrAdd(abb.assetBundleName, out guids);
                 ValidationMethods.Status bundleType = ValidationMethods.Status.Invalid;
 
-                for (int i = 0; i < bundleBuild.assetNames.Length; i++)
+                for (int i = 0; i < abb.assetNames.Length; i++)
                 {
-                    string assetPath = bundleBuild.assetNames[i];
+                    string assetPath = abb.assetNames[i];
                     GUID asset = new GUID(AssetDatabase.AssetPathToGUID(assetPath));
 
                     // Ensure the path is valid
@@ -150,10 +150,10 @@ namespace UnityEditor.Build.Pipeline
                     if (bundleType == ValidationMethods.Status.Invalid)
                         bundleType = status;
                     else if (bundleType != status)
-                        throw new ArgumentException(string.Format("Asset Bundle '{0}' is invalid because it contains mixed Asset and Scene types.", bundleBuild.assetBundleName));
+                        throw new ArgumentException(string.Format("Asset Bundle '{0}' is invalid because it contains mixed Asset and Scene types.", abb.assetBundleName));
 
-                    string address = bundleBuild.addressableNames != null && i < bundleBuild.addressableNames.Length && !string.IsNullOrEmpty(bundleBuild.addressableNames[i]) ?
-                        bundleBuild.addressableNames[i] : AssetDatabase.GUIDToAssetPath(asset.ToString());
+                    string address = abb.addressableNames != null && i < abb.addressableNames.Length && !string.IsNullOrEmpty(abb.addressableNames[i]) ?
+                        abb.addressableNames[i] : AssetDatabase.GUIDToAssetPath(asset.ToString());
 
                     // Add the guid to the bundle map
                     guids.Add(asset);

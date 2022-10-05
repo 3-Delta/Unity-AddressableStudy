@@ -109,6 +109,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             m_CreatedProviderIds = new Dictionary<string, VirtualAssetBundleRuntimeData>();
             m_ResourceProviderData = new List<ObjectInitializationData>();
 
+            // 这是group和abb的关系
             var errorString = ProcessAllGroups(aaContext);
             if (!string.IsNullOrEmpty(errorString))
                 result = AddressableAssetBuildResult.CreateResult<TResult>(null, 0, errorString);

@@ -31,6 +31,7 @@ namespace UnityEditor.Build.Pipeline.Tasks
         [InjectContext(ContextUsage.In)]
         IBuildParameters m_Parameters;
 
+        // 数据来自：BundleWriteData ： IBundleWriteData
         [InjectContext(ContextUsage.In)]
         IBundleWriteData m_WriteData;
 
@@ -177,6 +178,7 @@ namespace UnityEditor.Build.Pipeline.Tasks
             input.Threaded = ReflectionExtensions.SupportsMultiThreadedArchiving && ScriptableBuildPipeline.threadedArchiving;
 
             TaskOutput output;
+            // 处理从buildcache -> temp
             ReturnCode code = Run(input, out output);
 
             if (code == ReturnCode.Success)
@@ -254,6 +256,7 @@ namespace UnityEditor.Build.Pipeline.Tasks
                 item = new ArchiveWorkItem();
                 item.BundleName = bundleName;
                 item.Compression = input.GetCompressionForIdentifier(bundleName);
+                // 填充输出路径temp/com.addressable.com/xxx.bundle
                 item.OutputFilePath = input.GetOutputFilePathForIdentifier(bundleName);
                 item.ResourceFiles = new List<ResourceFile>();
                 bundleToWorkItem[bundleName] = item;
@@ -334,11 +337,13 @@ namespace UnityEditor.Build.Pipeline.Tasks
 
                     item.ResultDetails = (BundleDetails)cachedInfo[item.Index].Data[0];
                     item.ResultDetails.FileName = item.OutputFilePath;
+                    // ab生成： buildcache -> temp
                     CopyFileWithTimestampIfDifferent(item.CachedArtifactPath, item.ResultDetails.FileName, input.Log);
                 }
             }
 
             // Write all the files that aren't cached
+            // 记录不在buildcache下的ab, 写入temp下,这里暂时没有写入buildcache
             if (!ArchiveItems(nonCachedItems, input.TempOutputFolder, input.ProgressTracker, input.Threaded, input.Log))
                 return ReturnCode.Canceled;
 
@@ -349,6 +354,7 @@ namespace UnityEditor.Build.Pipeline.Tasks
             {
                 using (input.Log.ScopedStep(LogLevel.Info, "Copying To Cache"))
                 {
+                    // 新增或者变化的item写入buildcache
                     List<CachedInfo> uncachedInfo = nonCachedItems.Select(x => GetCachedInfo(input.BuildCache, cacheEntries[x.Index], x.ResourceFiles, x.ResultDetails)).ToList();
                     input.BuildCache.SaveCachedData(uncachedInfo);
                 }

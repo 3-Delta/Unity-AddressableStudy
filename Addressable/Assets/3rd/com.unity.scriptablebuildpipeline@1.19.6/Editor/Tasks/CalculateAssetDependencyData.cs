@@ -85,10 +85,10 @@ namespace UnityEditor.Build.Pipeline.Tasks
             public int CachedAssetCount;
         }
 
-        static CacheEntry GetAssetCacheEntry(IBuildCache cache, GUID asset, bool NonRecursiveDependencies)
+        static CacheEntry GetAssetCacheEntry(IBuildCache cache, GUID assetGuid, bool NonRecursiveDependencies)
         {
             CacheEntry entry;
-            entry = cache.GetCacheEntry(asset, NonRecursiveDependencies ? -kVersion : kVersion);
+            entry = cache.GetCacheEntry(assetGuid, NonRecursiveDependencies ? -kVersion : kVersion);
             return entry;
         }
 
@@ -220,7 +220,11 @@ namespace UnityEditor.Build.Pipeline.Tasks
             {
                 if (input.BuildCache != null)
                 {
+                    // 获取assetGuid和asset hash关系
+                    // 只要资源内部某个属性变化，或者依赖的资源有变动（之前没有引用后面引用，或者之前引用了后面不引用了或者换了引用的资源）
                     IList<CacheEntry> entries = input.Assets.Select(x => GetAssetCacheEntry(input.BuildCache, x, input.NonRecursiveDependencies)).ToList();
+                    
+                    // 如果资源guid没变化，但是hash变了，因为在buildcache下面找不到对应的缓存数据，所以会重新设置，并且更新buildcache的缓存
                     input.BuildCache.LoadCachedData(entries, out cachedInfo);
                 }
             }
@@ -232,6 +236,8 @@ namespace UnityEditor.Build.Pipeline.Tasks
                     AssetOutput assetResult = new AssetOutput();
                     assetResult.asset = input.Assets[i];
 
+                    // 如果有缓存，则从缓存设置assetResult
+                    // 否则重新计算
                     if (cachedInfo != null && cachedInfo[i] != null)
                     {
                         assetResult.assetInfo = cachedInfo[i].Data[0] as AssetLoadInfo;
@@ -261,19 +267,23 @@ namespace UnityEditor.Build.Pipeline.Tasks
                     assetResult.assetInfo.includedObjects = new List<ObjectIdentifier>(includedObjects);
 #if NONRECURSIVE_DEPENDENCY_DATA
                     ObjectIdentifier[] referencedObjects;
+                    // chahe中找不到的话，从这里获取asset的依赖
                     if (input.NonRecursiveDependencies)
                     {
+                        // 获取asset的依赖
                         referencedObjects = ContentBuildInterface.GetPlayerDependenciesForObjects(includedObjects, input.Target, input.TypeDB, DependencyType.ValidReferences);
                         referencedObjects = ExtensionMethods.FilterReferencedObjectIDs(asset, referencedObjects, input.Target, input.TypeDB, new HashSet<GUID>(input.Assets));
                     }
                     else
                     {
+                        // 获取asset的依赖
                         referencedObjects = ContentBuildInterface.GetPlayerDependenciesForObjects(includedObjects, input.Target, input.TypeDB);
                     }
 #else
                     ObjectIdentifier[] referencedObjects = ContentBuildInterface.GetPlayerDependenciesForObjects(includedObjects, input.Target, input.TypeDB);
 #endif
 
+                    // 给result的assetinfo设置依赖
                     assetResult.assetInfo.referencedObjects = new List<ObjectIdentifier>(referencedObjects);
                     var allObjects = new List<ObjectIdentifier>(includedObjects);
                     allObjects.AddRange(referencedObjects);
@@ -303,6 +313,7 @@ namespace UnityEditor.Build.Pipeline.Tasks
                 }
             }
 
+            // 写入BuildCache
             using (input.Logger.ScopedStep(LogLevel.Info, "Gathering Cache Entries to Save"))
             {
                 if (input.BuildCache != null)

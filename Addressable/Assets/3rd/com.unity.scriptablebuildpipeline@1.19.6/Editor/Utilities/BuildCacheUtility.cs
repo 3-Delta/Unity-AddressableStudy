@@ -34,25 +34,26 @@ internal static class BuildCacheUtility
     static Hash128 m_UnityVersion = HashingMethods.Calculate(Application.unityVersion).ToHash128();
 #endif
 
-    public static CacheEntry GetCacheEntry(GUID asset, int version = 1)
+    public static CacheEntry GetCacheEntry(GUID assetGuid, int version = 1)
     {
         CacheEntry entry;
-        KeyValuePair<GUID, int> key = new KeyValuePair<GUID, int>(asset, version);
+        KeyValuePair<GUID, int> key = new KeyValuePair<GUID, int>(assetGuid, version);
         if (m_GuidToHash.TryGetValue(key, out entry))
             return entry;
 
-        entry = new CacheEntry { Guid = asset, Version = version };
-        string path = AssetDatabase.GUIDToAssetPath(asset.ToString());
+        entry = new CacheEntry { Guid = assetGuid, Version = version };
+        string assetPath = AssetDatabase.GUIDToAssetPath(assetGuid.ToString());
         entry.Type = CacheEntry.EntryType.Asset;
 
-        if (path.Equals(CommonStrings.UnityBuiltInExtraPath, StringComparison.OrdinalIgnoreCase) || path.Equals(CommonStrings.UnityDefaultResourcePath, StringComparison.OrdinalIgnoreCase))
-            entry.Hash = HashingMethods.Calculate(Application.unityVersion, path).ToHash128();
+        if (assetPath.Equals(CommonStrings.UnityBuiltInExtraPath, StringComparison.OrdinalIgnoreCase) || assetPath.Equals(CommonStrings.UnityDefaultResourcePath, StringComparison.OrdinalIgnoreCase))
+            entry.Hash = HashingMethods.Calculate(Application.unityVersion, assetPath).ToHash128();
         else
         {
-            entry.Hash = AssetDatabase.GetAssetDependencyHash(path);
-            if (!entry.Hash.isValid && File.Exists(path))
-                entry.Hash = HashingMethods.CalculateFile(path).ToHash128();
-            if (path.EndsWith(".unity", StringComparison.OrdinalIgnoreCase))
+            // 只要资源内部某个属性变化，或者依赖的资源有变动（之前没有引用后面引用，或者之前引用了后面不引用了或者换了引用的资源）
+            entry.Hash = AssetDatabase.GetAssetDependencyHash(assetPath);
+            if (!entry.Hash.isValid && File.Exists(assetPath))
+                entry.Hash = HashingMethods.CalculateFile(assetPath).ToHash128();
+            if (assetPath.EndsWith(".unity", StringComparison.OrdinalIgnoreCase))
                 entry.Hash = HashingMethods.Calculate(entry.Hash, BuildInterfacesWrapper.SceneCallbackVersionHash).ToHash128();
         }
 

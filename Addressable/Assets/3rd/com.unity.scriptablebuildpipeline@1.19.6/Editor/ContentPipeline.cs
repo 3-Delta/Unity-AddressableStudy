@@ -83,6 +83,8 @@ namespace UnityEditor.Build.Pipeline
             }
 
             ThreadingManager.WaitForOutstandingTasks();
+            // 正常情况下 AddressableAssetsBuildContext是contextObjects
+            // 填充buildContext.m_ContextObjects,这是一个type:IContectObject
             BuildContext buildContext = new BuildContext(contextObjects);
             BuildLog buildLog = null;
 
@@ -115,6 +117,7 @@ namespace UnityEditor.Build.Pipeline
 
                     try
                     {
+                        // 填充buildContext.m_ContextObjects,这是一个type:IContectObject
                         buildContext.SetContextObject(parameters);
                         buildContext.SetContextObject(content);
                         buildContext.SetContextObject(result);

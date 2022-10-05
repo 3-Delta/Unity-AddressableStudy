@@ -150,6 +150,13 @@ namespace UnityEditor.AddressableAssets.GUI
             }
 
             EditorGUILayout.EndHorizontal();
+            
+            // 可视化group的guid和projectId
+            EditorGUILayout.BeginVertical();
+            EditorGUILayout.LabelField($"GroupGuid: {m_GroupTarget.Guid}");
+            EditorGUILayout.LabelField($"ProjectId{Application.cloudProjectId}");
+            EditorGUILayout.EndVertical();
+            
             GUILayout.Space(6);
             bool doDrawDivider = false;
 

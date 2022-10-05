@@ -367,11 +367,13 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void OnBuildPlayerData()
         {
+            // 全量构建aa
             AddressableAssetSettings.BuildPlayerContent();
         }
 
         void OnUpdateBuild()
         {
+            // 增量构建aa
             var path = ContentUpdateScript.GetContentStateDataPath(true);
             if (!string.IsNullOrEmpty(path))
                 ContentUpdateScript.BuildContentUpdate(AddressableAssetSettingsDefaultObject.Settings, path);

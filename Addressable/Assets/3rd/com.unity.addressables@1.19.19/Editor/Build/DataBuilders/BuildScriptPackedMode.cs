@@ -41,8 +41,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         }
 
         internal List<ObjectInitializationData> m_ResourceProviderData;
-        List<AssetBundleBuild> m_AllBundleInputDefs;
-        List<string> m_OutputAssetBundleNames;
+        List<AssetBundleBuild> m_Allabbs;
+        List<string> m_OutputUnHashABNames;
         HashSet<string> m_CreatedProviderIds;
         UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator m_Linker;
         Dictionary<string, string> m_BundleToInternalId = new Dictionary<string, string>();
@@ -67,6 +67,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             using (m_Log.ScopedStep(LogLevel.Info, "ProcessAllGroups"))
             {
+                // 设置group和abb的关系
                 var errorString = ProcessAllGroups(aaContext);
                 if (!string.IsNullOrEmpty(errorString))
                     result = AddressableAssetBuildResult.CreateResult<TResult>(null, 0, errorString);
@@ -87,8 +88,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             var aaSettings = builderInput.AddressableSettings;
 
-            m_AllBundleInputDefs = new List<AssetBundleBuild>();
-            m_OutputAssetBundleNames = new List<string>();
+            this.m_Allabbs = new List<AssetBundleBuild>();
+            this.m_OutputUnHashABNames = new List<string>();
             var bundleToAssetGroup = new Dictionary<string, string>();
             var runtimeData = new ResourceManagerRuntimeData
             {
@@ -213,7 +214,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var tempPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + PlatformMappingService.GetPlatformPathSubFolder() + "/LastAA_ContentBuild_State.bin";
 
             var playerBuildVersion = builderInput.PlayerVersion;
-            if (m_AllBundleInputDefs.Count > 0)
+            if (this.m_Allabbs.Count > 0)
             {
                 if (!BuildUtility.CheckModifiedScenesAndAskToSave())
                     return AddressableAssetBuildResult.CreateResult<TResult>(null, 0, "Unsaved scenes");
@@ -223,9 +224,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
                 var buildParams = new AddressableAssetsBundleBuildParameters(
                     aaContext.Settings,
+                    // 此时经过ProcessAllGroups的收集，aaContect只有assetEntries和bundleToAssetGroup有值
+                    // bundleToAssetGroup是hashabName:group.guid, 函数HandleDuplicateBundleNames中处理
                     aaContext.bundleToAssetGroup,
                     buildTarget,
                     buildTargetGroup,
+                    // Temp/com.unity.addressables/AssetBundles
                     aaContext.Settings.buildSettings.bundleBuildPath);
 
                 var builtinShaderBundleName = GetBuiltInShaderBundleNamePrefix(aaContext) + "_unitybuiltinshaders.bundle";
@@ -236,6 +240,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 string monoScriptBundleName = GetMonoScriptBundleNamePrefix(aaContext);
                 if (!string.IsNullOrEmpty(monoScriptBundleName))
                     monoScriptBundleName += "_monoscripts.bundle";
+                
+                // 获取group和abb的关系之后，执行这些task,在temp目录下生成ab
                 var buildTasks = RuntimeDataBuildTasks(builtinShaderBundleName, monoScriptBundleName);
                 buildTasks.Add(extractData);
 
@@ -243,7 +249,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 using (m_Log.ScopedStep(LogLevel.Info, "ContentPipeline.BuildAssetBundles"))
                 using (new SBPSettingsOverwriterScope(ProjectConfigData.GenerateBuildLayout)) // build layout generation requires full SBP write results
                 {
-                    var exitCode = ContentPipeline.BuildAssetBundles(buildParams, new BundleBuildContent(m_AllBundleInputDefs), out results, buildTasks, aaContext, m_Log);
+                    // 构建ab, 从buildcache到temp目录，后面会将这里的ab拷贝到libray目录下
+                    var exitCode = ContentPipeline.BuildAssetBundles(buildParams, new BundleBuildContent(this.m_Allabbs), out results, buildTasks, aaContext, m_Log);
 
                     if (exitCode < ReturnCode.Success)
                         return AddressableAssetBuildResult.CreateResult<TResult>(null, 0, "SBP Error" + exitCode);
@@ -265,19 +272,24 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
                     foreach (var assetGroup in groups)
                     {
-                        if (aaContext.assetGroupToBundles.TryGetValue(assetGroup, out List<string> buildBundles))
+                        // 每个group对应有几个hashBundle
+                        // m_OutputABNames是正常abbname的集合，不是hashbundlename的集合
+                        // abb.assetbundlename是hash过的
+                        if (aaContext.assetGroupToBundles.TryGetValue(assetGroup, out List<string> hashBundles))
                         {
                             using (m_Log.ScopedStep(LogLevel.Info, assetGroup.name))
                             {
                                 List<string> outputBundles = new List<string>();
-                                for (int i = 0; i < buildBundles.Count; ++i)
+                                for (int i = 0; i < hashBundles.Count; ++i)
                                 {
-                                    var b = m_AllBundleInputDefs.FindIndex(inputDef =>
-                                        buildBundles[i].StartsWith(inputDef.assetBundleName));
-                                    outputBundles.Add(b >= 0 ? m_OutputAssetBundleNames[b] : buildBundles[i]);
+                                    // 此时abb.assetBundleName也是hash
+                                    // b != -1, 表示不是内置ab,是普通ab
+                                    var b = this.m_Allabbs.FindIndex(abb =>
+                                        hashBundles[i].StartsWith(abb.assetBundleName));
+                                    outputBundles.Add(b >= 0 ? this.m_OutputUnHashABNames[b] : hashBundles[i]);
                                 }
 
-                                PostProcessBundles(assetGroup, buildBundles, outputBundles, results,
+                                PostProcessBundles(assetGroup, hashBundles, outputBundles, results,
                                     aaContext.runtimeData, aaContext.locations, builderInput.Registry,
                                     primaryKeyToCatalogEntry, bundleRenameMap, postCatalogUpdateCallbacks);
                             }
@@ -432,9 +444,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 Dictionary<string, ContentCatalogDataEntry> locationIdToCatalogEntryMap = BuildLocationIdToCatalogEntryMap(aaContext.locations);
                 if (builderInput.PreviousContentState != null)
                 {
+                    // 增量构建
                     ContentUpdateContext contentUpdateContext = new ContentUpdateContext()
                     {
                         BundleToInternalBundleIdMap = bundleToInternalId,
+                        // 从builderInput.PreviousContentState获取cacheinfo数据
                         GuidToPreviousAssetStateMap = BuildGuidToCachedAssetStateMap(builderInput.PreviousContentState, aaContext.Settings),
                         IdToCatalogDataEntryMap = locationIdToCatalogEntryMap,
                         WriteData = writeData,
@@ -730,39 +744,41 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             if (schema.Compression == BundledAssetGroupSchema.BundleCompressionMode.LZMA && aaContext.runtimeData.BuildTarget == BuildTarget.WebGL.ToString())
                 Addressables.LogWarning($"Addressable group {assetGroup.Name} uses LZMA compression, which cannot be decompressed on WebGL. Use LZ4 compression instead.");
 
-            var bundleInputDefs = new List<AssetBundleBuild>();
-            var list = PrepGroupBundlePacking(assetGroup, bundleInputDefs, schema);
+            var abbs = new List<AssetBundleBuild>();
+            var list = PrepGroupBundlePacking(assetGroup, abbs, schema);
             aaContext.assetEntries.AddRange(list);
-            List<string> uniqueNames = HandleDuplicateBundleNames(bundleInputDefs, aaContext.bundleToAssetGroup, assetGroup.Guid);
-            m_OutputAssetBundleNames.AddRange(uniqueNames);
-            m_AllBundleInputDefs.AddRange(bundleInputDefs);
+            List<string> uniqueNames = HandleDuplicateBundleNames(abbs, aaContext.bundleToAssetGroup, assetGroup.Guid);
+            this.m_OutputUnHashABNames.AddRange(uniqueNames);
+            m_Allabbs.AddRange(abbs);
             return string.Empty;
         }
 
-        internal static List<string> HandleDuplicateBundleNames(List<AssetBundleBuild> bundleInputDefs, Dictionary<string, string> bundleToAssetGroup = null, string assetGroupGuid = null)
+        internal static List<string> HandleDuplicateBundleNames(List<AssetBundleBuild> abbs, Dictionary<string, string> bundleToAssetGroup = null, string assetGroupGuid = null)
         {
             var generatedUniqueNames = new List<string>();
-            var handledNames = new HashSet<string>();
+            var checkDuplicateNameHash = new HashSet<string>();
 
-            for (int i = 0; i < bundleInputDefs.Count; i++)
+            for (int i = 0; i < abbs.Count; i++)
             {
-                AssetBundleBuild bundleBuild = bundleInputDefs[i];
+                AssetBundleBuild bundleBuild = abbs[i];
                 string assetBundleName = bundleBuild.assetBundleName;
-                if (handledNames.Contains(assetBundleName))
+                // group内部的entry重名检测
+                if (checkDuplicateNameHash.Contains(assetBundleName))
                 {
+                    // 同一个group内部的entry有重名，其实就是address一样
                     int count = 1;
                     var newName = assetBundleName;
-                    while (handledNames.Contains(newName) && count < 1000)
+                    while (checkDuplicateNameHash.Contains(newName) && count < 1000)
                         newName = assetBundleName.Replace(".bundle", string.Format("{0}.bundle", count++));
                     assetBundleName = newName;
                 }
 
                 string hashedAssetBundleName = HashingMethods.Calculate(assetBundleName) + ".bundle";
                 generatedUniqueNames.Add(assetBundleName);
-                handledNames.Add(assetBundleName);
+                checkDuplicateNameHash.Add(assetBundleName);
 
                 bundleBuild.assetBundleName = hashedAssetBundleName;
-                bundleInputDefs[i] = bundleBuild;
+                abbs[i] = bundleBuild;
 
                 if (bundleToAssetGroup != null)
                     bundleToAssetGroup.Add(hashedAssetBundleName, assetGroupGuid);
@@ -816,11 +832,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// Processes an AddressableAssetGroup and generates AssetBundle input definitions based on the BundlePackingMode.
         /// </summary>
         /// <param name="assetGroup">The AddressableAssetGroup to be processed.</param>
-        /// <param name="bundleInputDefs">The list of bundle definitions fed into the build pipeline AssetBundleBuild</param>
+        /// <param name="abbs">The list of bundle definitions fed into the build pipeline AssetBundleBuild</param>
         /// <param name="schema">The BundledAssetGroupSchema of used to process the assetGroup.</param>
         /// <param name="entryFilter">A filter to remove AddressableAssetEntries from being processed in the build.</param>
         /// <returns>The total list of AddressableAssetEntries that were processed.</returns>
-        public static List<AddressableAssetEntry> PrepGroupBundlePacking(AddressableAssetGroup assetGroup, List<AssetBundleBuild> bundleInputDefs, BundledAssetGroupSchema schema, Func<AddressableAssetEntry, bool> entryFilter = null)
+        /// 根据group设置abb, abb.abname = (groupHash + "_assets_" + address + ".bundle").tolower();
+        public static List<AddressableAssetEntry> PrepGroupBundlePacking(AddressableAssetGroup assetGroup, List<AssetBundleBuild> abbs, BundledAssetGroupSchema schema, Func<AddressableAssetEntry, bool> entryFilter = null)
         {
             var combinedEntries = new List<AddressableAssetEntry>();
             var packingMode = schema.BundleMode;
@@ -839,7 +856,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         a.GatherAllAssets(allEntries, true, true, false, entryFilter);
                     }
                     combinedEntries.AddRange(allEntries);
-                    GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), "all", ignoreUnsupportedFilesInBuild);
+                    GenerateBuildInputDefinitions(allEntries, abbs, CalculateGroupHash(namingMode, assetGroup, allEntries), "all", ignoreUnsupportedFilesInBuild);
                 } break;
                 case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:
                 {
@@ -850,7 +867,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         var allEntries = new List<AddressableAssetEntry>();
                         a.GatherAllAssets(allEntries, true, true, false, entryFilter);
                         combinedEntries.AddRange(allEntries);
-                        GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), a.address, ignoreUnsupportedFilesInBuild);
+                        GenerateBuildInputDefinitions(allEntries, abbs, CalculateGroupHash(namingMode, assetGroup, allEntries), a.address, ignoreUnsupportedFilesInBuild);
                     }
                 } break;
                 case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
@@ -880,7 +897,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                             a.GatherAllAssets(allEntries, true, true, false, entryFilter);
                         }
                         combinedEntries.AddRange(allEntries);
-                        GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), entryGroup.Key, ignoreUnsupportedFilesInBuild);
+                        GenerateBuildInputDefinitions(allEntries, abbs, CalculateGroupHash(namingMode, assetGroup, allEntries), entryGroup.Key, ignoreUnsupportedFilesInBuild);
                     }
                 } break;
                 default:
@@ -889,7 +906,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return combinedEntries;
         }
 
-        internal static void GenerateBuildInputDefinitions(List<AddressableAssetEntry> allEntries, List<AssetBundleBuild> buildInputDefs, string groupGuid, string address, bool ignoreUnsupportedFilesInBuild)
+        internal static void GenerateBuildInputDefinitions(List<AddressableAssetEntry> allEntries, List<AssetBundleBuild> abbs, string groupHash, string address, bool ignoreUnsupportedFilesInBuild)
         {
             var scenes = new List<AddressableAssetEntry>();
             var assets = new List<AddressableAssetEntry>();
@@ -904,9 +921,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     assets.Add(e);
             }
             if (assets.Count > 0)
-                buildInputDefs.Add(GenerateBuildInputDefinition(assets, groupGuid + "_assets_" + address + ".bundle"));
+                abbs.Add(GenerateBuildInputDefinition(assets, groupHash + "_assets_" + address + ".bundle"));
             if (scenes.Count > 0)
-                buildInputDefs.Add(GenerateBuildInputDefinition(scenes, groupGuid + "_scenes_" + address + ".bundle"));
+                abbs.Add(GenerateBuildInputDefinition(scenes, groupHash + "_scenes_" + address + ".bundle"));
         }
 
         private static void ThrowExceptionIfInvalidFiletypeOrAddress(AddressableAssetEntry entry, bool ignoreUnsupportedFilesInBuild)
@@ -925,11 +942,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         internal static AssetBundleBuild GenerateBuildInputDefinition(List<AddressableAssetEntry> assets, string name)
         {
             var assetInternalIds = new HashSet<string>();
-            var assetsInputDef = new AssetBundleBuild();
-            assetsInputDef.assetBundleName = name.ToLower().Replace(" ", "").Replace('\\', '/').Replace("//", "/");
-            assetsInputDef.assetNames = assets.Select(s => s.AssetPath).ToArray();
-            assetsInputDef.addressableNames = assets.Select(s => s.GetAssetLoadPath(true, assetInternalIds)).ToArray();
-            return assetsInputDef;
+            var abb = new AssetBundleBuild();
+            // 给ab命名
+            abb.assetBundleName = name.ToLower().Replace(" ", "").Replace('\\', '/').Replace("//", "/");
+            abb.assetNames = assets.Select(s => s.AssetPath).ToArray();
+            abb.addressableNames = assets.Select(s => s.GetAssetLoadPath(true, assetInternalIds)).ToArray();
+            return abb;
         }
 
         static string[] CreateRemoteCatalog(string jsonText, List<ResourceLocationData> locations, AddressableAssetSettings aaSettings, AddressablesDataBuilderInput builderInput, ProviderLoadRequestOptions catalogLoadOptions)
@@ -985,6 +1003,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         // and isn't needed for most tests.
         internal static bool s_SkipCompilePlayerScripts = false;
 
+        // 获取group和abb的关系之后，执行这些task,在temp目录下生成ab
         static IList<IBuildTask> RuntimeDataBuildTasks(string builtinShaderBundleName, string monoScriptBundleName)
         {
             var buildTasks = new List<IBuildTask>();
@@ -1042,12 +1061,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
                 else if (File.Exists(destPath))
-                    File.Delete(destPath);
+                    File.Delete(destPath); 
+                // 将文件从temp -> library下
                 File.Move(srcPath, destPath);
             }
         }
 
-        void PostProcessBundles(AddressableAssetGroup assetGroup, List<string> buildBundles, List<string> outputBundles, IBundleBuildResults buildResult, ResourceManagerRuntimeData runtimeData, List<ContentCatalogDataEntry> locations, FileRegistry registry, Dictionary<string, ContentCatalogDataEntry> primaryKeyToCatalogEntry, Dictionary<string, string> bundleRenameMap, List<Action> postCatalogUpdateCallbacks)
+        void PostProcessBundles(AddressableAssetGroup assetGroup, List<string> hashBundles, List<string> outputBundles, IBundleBuildResults buildResult, ResourceManagerRuntimeData runtimeData, List<ContentCatalogDataEntry> locations, FileRegistry registry, Dictionary<string, ContentCatalogDataEntry> primaryKeyToCatalogEntry, Dictionary<string, string> bundleRenameMap, List<Action> postCatalogUpdateCallbacks)
         {
             var schema = assetGroup.GetSchema<BundledAssetGroupSchema>();
             if (schema == null)
@@ -1057,11 +1077,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             if (string.IsNullOrEmpty(path))
                 return;
 
-            for (int i = 0; i < buildBundles.Count; ++i)
+            for (int i = 0; i < hashBundles.Count; ++i)
             {
-                if (primaryKeyToCatalogEntry.TryGetValue(buildBundles[i], out ContentCatalogDataEntry dataEntry))
+                if (primaryKeyToCatalogEntry.TryGetValue(hashBundles[i], out ContentCatalogDataEntry dataEntry))
                 {
-                    var info = buildResult.BundleInfos[buildBundles[i]];
+                    // hashbundle:detail 不管是增量，还是全量，先全部构建hashbundle到temp目录下， 然后这个根据hash获取detail
+                    var info = buildResult.BundleInfos[hashBundles[i]];
                     var requestOptions = new AssetBundleRequestOptions
                     {
                         Crc = schema.UseAssetBundleCrc ? info.Crc : 0,
@@ -1091,12 +1112,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         outputBundles[i] = ConstructAssetBundleName(assetGroup, schema, info, reconstructedBundleName);
                     }
                     
-                    dataEntry.InternalId = dataEntry.InternalId.Remove(dataEntry.InternalId.Length - buildBundles[i].Length) + outputBundles[i];
+                    dataEntry.InternalId = dataEntry.InternalId.Remove(dataEntry.InternalId.Length - hashBundles[i].Length) + outputBundles[i];
                     dataEntry.Keys[0] = outputBundles[i];
-                    ReplaceDependencyKeys(buildBundles[i], outputBundles[i], locations);
+                    ReplaceDependencyKeys(hashBundles[i], outputBundles[i], locations);
 
-                    if (!m_BundleToInternalId.ContainsKey(buildBundles[i]))
-                        m_BundleToInternalId.Add(buildBundles[i], dataEntry.InternalId);
+                    if (!m_BundleToInternalId.ContainsKey(hashBundles[i]))
+                        m_BundleToInternalId.Add(hashBundles[i], dataEntry.InternalId);
 
                     if (dataEntry.InternalId.StartsWith("http:\\"))
                         dataEntry.InternalId = dataEntry.InternalId.Replace("http:\\", "http://").Replace("\\", "/");
@@ -1109,12 +1130,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
 
                 var targetPath = Path.Combine(path, outputBundles[i]);
-                var srcPath = Path.Combine(assetGroup.Settings.buildSettings.bundleBuildPath, buildBundles[i]);
+                var srcPath = Path.Combine(assetGroup.Settings.buildSettings.bundleBuildPath, hashBundles[i]);
                 
                 if (assetGroup.GetSchema<BundledAssetGroupSchema>()?.BundleNaming == BundledAssetGroupSchema.BundleNamingStyle.NoHash)
                     outputBundles[i] = StripHashFromBundleLocation(outputBundles[i]);
                 
-                bundleRenameMap.Add(buildBundles[i], outputBundles[i]);
+                bundleRenameMap.Add(hashBundles[i], outputBundles[i]);
+                // 将文件从temp -> library下
                 MoveFileToDestinationWithTimestampIfDifferent(srcPath, targetPath, m_Log);
                 AddPostCatalogUpdatesInternal(assetGroup, postCatalogUpdateCallbacks, dataEntry, targetPath, registry);
 
@@ -1177,9 +1199,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             if (assetGroup != null)
             {
                 string groupName = assetGroup.Name.Replace(" ", "").Replace('\\', '/').Replace("//", "/").ToLower();
+                // groupname + abname
                 assetBundleName = groupName + "_" + assetBundleName;
             }
             
+            // appendhash: groupname + abname + hash
             string bundleNameWithHashing = BuildUtility.GetNameWithHashNaming(schema.BundleNaming, info.Hash.ToString(), assetBundleName);
             //For no hash, we need the hash temporarily for content update purposes.  This will be stripped later on.
             if (schema.BundleNaming == BundledAssetGroupSchema.BundleNamingStyle.NoHash)

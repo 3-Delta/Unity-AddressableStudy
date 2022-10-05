@@ -178,9 +178,9 @@ namespace UnityEditor.Build.Pipeline.Utilities
         }
 
         /// <inheritdoc />
-        public CacheEntry GetCacheEntry(GUID asset, int version = 1)
+        public CacheEntry GetCacheEntry(GUID assetGuid, int version = 1)
         {
-            return BuildCacheUtility.GetCacheEntry(asset, version);
+            return BuildCacheUtility.GetCacheEntry(assetGuid, version);
         }
 
         /// <inheritdoc />
@@ -233,7 +233,7 @@ namespace UnityEditor.Build.Pipeline.Utilities
             var updatedEntry = GetUpdatedCacheEntry(info.Asset);
             if (info.Asset != updatedEntry)
             {
-                if (!LogCacheMiss($"[Cache Miss]: Source asset changed. Old: {info.Asset} New: {updatedEntry}"))
+                if (!LogCacheMiss($"[Cache Miss]: Source assetGuid changed. Old: {info.Asset} New: {updatedEntry}"))
                     return true;
                 result = true;
             }

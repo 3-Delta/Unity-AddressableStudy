@@ -50,6 +50,9 @@ namespace UnityEditor.Build.Pipeline
                         if (!tracker.UpdateTaskUnchecked(task.GetType().Name.HumanReadable()))
                             return ReturnCode.Canceled;
 
+                        // 通过反射，给task的各个field赋值，值来源于context的m_ContextObjects
+                        // 其实是获取task的各种field, 然后从context的m_ContextObjects(这是一个type:IContectObject)中根据fieldtype
+                        // 找到对应的IContectObject对象，将该对象赋值给task的对应field
                         ContextInjector.Inject(context, task);
                         ReturnCode result;
                         using (logger.ScopedStep(LogLevel.Info, task.GetType().Name))
