@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2aca60c7dff846f3be636613217debfb, type: 3}
+  m_Name: FolderGroups
+  m_EditorClassIdentifier: Editor::FolderGroups
+  includeDependency: 0
+  Groups:
+  - folder: {fileID: 102900000, guid: b927bf911a304dc49b8625c57d7f9ae4, type: 3}
+    searchFilters: ttf|fontsettings
+    searchOption: 1
+    allInOne: 0
+    includeInBuild: 1
+  - folder: {fileID: 102900000, guid: a83e7b26ec89fc6409d99f72e05cd2d4, type: 3}
+    searchFilters: mat
+    searchOption: 1
+    allInOne: 1
+    includeInBuild: 1
+  - folder: {fileID: 102900000, guid: c0158ad8d07742142a3cd6a8a78bbff7, type: 3}
+    searchFilters: prefab
+    searchOption: 1
+    allInOne: 1
+    includeInBuild: 1
+  - folder: {fileID: 102900000, guid: 73af2a6dce61b954b9f72ce1a176f756, type: 3}
+    searchFilters: shader|shadergraph|shadervariants|cginc
+    searchOption: 1
+    allInOne: 1
+    includeInBuild: 1
+  - folder: {fileID: 102900000, guid: 61ed1d74e8d72224b88096942b5c5f69, type: 3}
+    searchFilters: jpg|png|jpeg
+    searchOption: 1
+    allInOne: 1
+    includeInBuild: 0

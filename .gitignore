@@ -6,8 +6,6 @@
 /Addressable/Temp
 /Addressable/*.csproj
 /Addressable/UserSettings
-/Addressable/Assets/AddressableAssetsData.meta
-/Addressable/Assets/AddressableAssetsData
 /Addressable/PackageBuild/Windows/Addressable.exe
 /Addressable/PackageBuild/Windows/Addressable_Data/Managed/Assembly-CSharp.dll
 /Addressable/PackageBuild/Windows/Addressable_Data/Managed/Assembly-CSharp.pdb
@@ -222,3 +220,39 @@
 /Addressable/PackageBuild/Windows/MonoBleedingEdge
 /Addressable/ServerData
 /Addressable/DisabledImporterBuildPath
+/Addressable/Assets/AddressableAssetsData/AssetGroups.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Built In Data.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Built In Data.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Default Local Group.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Default Local Group.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Font.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Font.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Material.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Material.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Prefab.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Prefab.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Built In Data_PlayerDataGroupSchema.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Built In Data_PlayerDataGroupSchema.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Default Local Group_BundledAssetGroupSchema.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Default Local Group_BundledAssetGroupSchema.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Default Local Group_ContentUpdateGroupSchema.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Default Local Group_ContentUpdateGroupSchema.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Font_BundledAssetGroupSchema.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Font_BundledAssetGroupSchema.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Font_ContentUpdateGroupSchema.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Font_ContentUpdateGroupSchema.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Material_BundledAssetGroupSchema.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Material_BundledAssetGroupSchema.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Material_ContentUpdateGroupSchema.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Material_ContentUpdateGroupSchema.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Prefab_BundledAssetGroupSchema.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Prefab_BundledAssetGroupSchema.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Prefab_ContentUpdateGroupSchema.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Prefab_ContentUpdateGroupSchema.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Shader_BundledAssetGroupSchema.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Shader_BundledAssetGroupSchema.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Shader_ContentUpdateGroupSchema.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Schemas/Shader_ContentUpdateGroupSchema.asset.meta
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Shader.asset
+/Addressable/Assets/AddressableAssetsData/AssetGroups/Shader.asset.meta

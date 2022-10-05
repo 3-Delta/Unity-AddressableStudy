@@ -63,7 +63,7 @@ public class AddressableGroupBuilder {
     }
 
     public static void BuildGroups(FolderGroups fg, AddressableAssetSettings aaSettings, bool setAsLocalOrRemote = true) {
-        var folders = fg.ValidGroups;
+        var folders = fg.ValidGroups(true);
         HashSet<string> fixedAssets = new HashSet<string>();
         List<string> ignoreAssets = new List<string>();
         // assetPath:refCount
@@ -151,7 +151,7 @@ public class AddressableGroupBuilder {
                 
                 var schemaContent = group.GetSchema<ContentUpdateGroupSchema>();
                 // StaticContent = newType == ContentType.CannotChangePostRelease;
-                schemaContent.StaticContent = false; // 静态资源
+                schemaContent.StaticContent = true; // 静态资源
             }
 
             return group;

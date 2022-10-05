@@ -15,6 +15,7 @@ public class FolderGroups : ScriptableObject {
         public string searchFilters;
         public SearchOption searchOption = SearchOption.AllDirectories;
         public bool allInOne = false;
+        public bool includeInBuild = true;
 
         public string FolderName {
             get {
@@ -95,17 +96,17 @@ public class FolderGroups : ScriptableObject {
     // public bool setAsLocalOrRemote = true;
     public List<FolderGroup> Groups = new List<FolderGroup>();
 
-    public List<FolderGroup> ValidGroups {
-        get {
-            List<FolderGroup> ret = new List<FolderGroup>();
-            foreach (var group in this.Groups) {
-                if (group.Valid) {
+    public List<FolderGroup> ValidGroups(bool onlyIncludeInBuild = true) {
+        List<FolderGroup> ret = new List<FolderGroup>();
+        foreach (var group in this.Groups) {
+            if (group.Valid) {
+                if (!onlyIncludeInBuild || group.includeInBuild) {
                     ret.Add(group);
                 }
             }
-
-            return ret;
         }
+
+        return ret;
     }
 
     public bool Get(string folderName, out FolderGroup group) {
