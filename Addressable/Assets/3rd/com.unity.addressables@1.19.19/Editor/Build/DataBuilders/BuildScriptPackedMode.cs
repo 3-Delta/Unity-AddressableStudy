@@ -40,7 +40,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
         }
 
-        internal List<ObjectInitializationData> m_ResourceProviderData;
+        internal List<ObjectInitData> m_ResourceProviderData;
         List<AssetBundleBuild> m_Allabbs;
         List<string> m_OutputUnHashABNames;
         HashSet<string> m_CreatedProviderIds;
@@ -48,7 +48,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         Dictionary<string, string> m_BundleToInternalId = new Dictionary<string, string>();
         private string m_CatalogBuildPath;
 
-        internal List<ObjectInitializationData> ResourceProviderData => m_ResourceProviderData.ToList();
+        internal List<ObjectInitData> ResourceProviderData => m_ResourceProviderData.ToList();
 
         /// <inheritdoc />
         public override bool CanBuildData<T>()
@@ -109,7 +109,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             m_Linker.AddAssemblies(new[] { typeof(Addressables).Assembly, typeof(UnityEngine.ResourceManagement.ResourceManager).Assembly });
             m_Linker.AddTypes(runtimeData.CertificateHandlerType);
 
-            m_ResourceProviderData = new List<ObjectInitializationData>();
+            m_ResourceProviderData = new List<ObjectInitData>();
             aaContext = new AddressableAssetsBuildContext
             {
                 Settings = aaSettings,
@@ -171,7 +171,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 m_CreatedProviderIds.Add(bundleProviderId);
                 var bundleProviderType = schema.AssetBundleProviderType.Value;
-                var bundleProviderData = ObjectInitializationData.CreateSerializedInitializationData(bundleProviderType, bundleProviderId);
+                var bundleProviderData = ObjectInitData.CreateSerializedInitData(bundleProviderType, bundleProviderId);
                 m_ResourceProviderData.Add(bundleProviderData);
             }
         }
@@ -342,10 +342,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
                 contentCatalog.ResourceProviderData.AddRange(m_ResourceProviderData);
                 foreach (var t in aaContext.providerTypes)
-                    contentCatalog.ResourceProviderData.Add(ObjectInitializationData.CreateSerializedInitializationData(t));
+                    contentCatalog.ResourceProviderData.Add(ObjectInitData.CreateSerializedInitData(t));
 
-                contentCatalog.InstanceProviderData = ObjectInitializationData.CreateSerializedInitializationData(instanceProviderType.Value);
-                contentCatalog.SceneProviderData = ObjectInitializationData.CreateSerializedInitializationData(sceneProviderType.Value);
+                contentCatalog.InstanceProviderData = ObjectInitData.CreateSerializedInitData(instanceProviderType.Value);
+                contentCatalog.SceneProviderData = ObjectInitData.CreateSerializedInitData(sceneProviderType.Value);
 
                 //save catalog
                 var jsonText = JsonUtility.ToJson(contentCatalog);
@@ -370,7 +370,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     var provider = io as IObjectInitializationDataProvider;
                     if (provider != null)
                     {
-                        var id = provider.CreateObjectInitializationData();
+                        var id = provider.CreateObjectInitData();
                         aaContext.runtimeData.InitializationObjects.Add(id);
                         m_Linker.AddTypes(id.ObjectType.Value);
                         m_Linker.AddTypes(id.GetRuntimeTypes());
@@ -699,7 +699,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 if (!m_CreatedProviderIds.Contains(typeof(LegacyResourcesProvider).Name))
                 {
                     m_CreatedProviderIds.Add(typeof(LegacyResourcesProvider).Name);
-                    m_ResourceProviderData.Add(ObjectInitializationData.CreateSerializedInitializationData(typeof(LegacyResourcesProvider)));
+                    m_ResourceProviderData.Add(ObjectInitData.CreateSerializedInitData(typeof(LegacyResourcesProvider)));
                 }
             }
 
@@ -732,7 +732,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 m_CreatedProviderIds.Add(assetProviderId);
                 var assetProviderType = schema.BundledAssetProviderType.Value;
-                var assetProviderData = ObjectInitializationData.CreateSerializedInitializationData(assetProviderType, assetProviderId);
+                var assetProviderData = ObjectInitData.CreateSerializedInitData(assetProviderType, assetProviderId);
                 m_ResourceProviderData.Add(assetProviderData);
             }
 

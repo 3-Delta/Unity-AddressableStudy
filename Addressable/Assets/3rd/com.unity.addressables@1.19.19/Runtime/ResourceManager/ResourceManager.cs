@@ -139,8 +139,17 @@ namespace UnityEngine.ResourceManagement
 
         internal bool CallbackHooksEnabled = true; // tests might need to disable the callback hooks to manually pump updating
 
+        /// <summary>
+        /// Gets the list of configured <see cref="IResourceProvider"/> objects. Resource Providers handle load and release operations for <see cref="IResourceLocation"/> objects.
+        /// </summary>
+        /// <value>The resource providers list.</value>
+        public IList<IResourceProvider> ResourceProviders { get { return m_ResourceProviders; } }
+        
         ListWithEvents<IResourceProvider> m_ResourceProviders = new ListWithEvents<IResourceProvider>();
         IAllocationStrategy m_allocator;
+
+        //cache of type + providerId to IResourceProviders for faster lookup
+        internal Dictionary<int, IResourceProvider> m_type2ProviderMap = new Dictionary<int, IResourceProvider>();
 
         // list of all the providers in s_ResourceProviders that implement IUpdateReceiver
         ListWithEvents<IUpdateReceiver> m_UpdateReceivers = new ListWithEvents<IUpdateReceiver>();
@@ -149,15 +158,16 @@ namespace UnityEngine.ResourceManagement
         bool m_UpdatingReceivers = false;
         //this prevents re-entrance into the Update method, which can cause stack overflow and infinite loops
         bool m_InsideUpdateMethod = false;
+        
         internal int OperationCacheCount { get { return m_AssetOperationCache.Count; } }
         internal int InstanceOperationCount { get { return m_TrackedInstanceOperations.Count; } }
-        //cache of type + providerId to IResourceProviders for faster lookup
-        internal Dictionary<int, IResourceProvider> m_providerMap = new Dictionary<int, IResourceProvider>();
+        
         Dictionary<IOperationCacheKey, IAsyncOperation> m_AssetOperationCache = new Dictionary<IOperationCacheKey, IAsyncOperation>();
         HashSet<InstanceOperation> m_TrackedInstanceOperations = new HashSet<InstanceOperation>();
-        DelegateList<float> m_UpdateCallbacks = DelegateList<float>.CreateWithGlobalCache();
+        
+        DelegateList<float> m_UpdateDelList = DelegateList<float>.CreateWithGlobalCache();
+        
         List<IAsyncOperation> m_DeferredCompleteCallbacks = new List<IAsyncOperation>();
-
         bool m_InsideExecuteDeferredCallbacksMethod = false;
         List<DeferredCallbackRegisterRequest> m_DeferredCallbacksToRegister = null;
         private struct DeferredCallbackRegisterRequest
@@ -168,11 +178,14 @@ namespace UnityEngine.ResourceManagement
 
         Action<AsyncOperationHandle, DiagnosticEventType, int, object> m_obsoleteDiagnosticsHandler; // For use in working with Obsolete RegisterDiagnosticCallback method.
         Action<DiagnosticEventContext> m_diagnosticsHandler;
+        
         Action<IAsyncOperation> m_ReleaseOpNonCached;
         Action<IAsyncOperation> m_ReleaseOpCached;
         Action<IAsyncOperation> m_ReleaseInstanceOp;
+        
         static int s_GroupOperationTypeHash = typeof(GroupOperation).GetHashCode();
         static int s_InstanceOperationTypeHash = typeof(InstanceOperation).GetHashCode();
+        
         /// <summary>
         /// Add an update reveiver.
         /// </summary>
@@ -209,13 +222,7 @@ namespace UnityEngine.ResourceManagement
         /// The allocation strategy object.
         /// </summary>
         public IAllocationStrategy Allocator { get { return m_allocator; } set { m_allocator = value; } }
-
-        /// <summary>
-        /// Gets the list of configured <see cref="IResourceProvider"/> objects. Resource Providers handle load and release operations for <see cref="IResourceLocation"/> objects.
-        /// </summary>
-        /// <value>The resource providers list.</value>
-        public IList<IResourceProvider> ResourceProviders { get { return m_ResourceProviders; } }
-
+        
         /// <summary>
         /// The CertificateHandler instance object.
         /// </summary>
@@ -230,20 +237,22 @@ namespace UnityEngine.ResourceManagement
             m_ReleaseOpNonCached = OnOperationDestroyNonCached;
             m_ReleaseOpCached = OnOperationDestroyCached;
             m_ReleaseInstanceOp = OnInstanceOperationDestroy;
+            
             m_allocator = alloc == null ? new LRUCacheAllocationStrategy(1000, 1000, 100, 10) : alloc;
-            m_ResourceProviders.OnElementAdded += OnObjectAdded;
-            m_ResourceProviders.OnElementRemoved += OnObjectRemoved;
+            m_ResourceProviders.OnElementAdded += this.OnResourceProviderAdded;
+            m_ResourceProviders.OnElementRemoved += this.OnResourceProviderRemoved;
+            
             m_UpdateReceivers.OnElementAdded += x => RegisterForCallbacks();
         }
 
-        private void OnObjectAdded(object obj)
+        private void OnResourceProviderAdded(object obj)
         {
             IUpdateReceiver updateReceiver = obj as IUpdateReceiver;
             if (updateReceiver != null)
                 AddUpdateReceiver(updateReceiver);
         }
 
-        private void OnObjectRemoved(object obj)
+        private void OnResourceProviderRemoved(object obj)
         {
             IUpdateReceiver updateReceiver = obj as IUpdateReceiver;
             if (updateReceiver != null)
@@ -311,14 +320,16 @@ namespace UnityEngine.ResourceManagement
             {
                 IResourceProvider prov = null;
                 var hash = location.ProviderId.GetHashCode() * 31 + (t == null ? 0 : t.GetHashCode());
-                if (!m_providerMap.TryGetValue(hash, out prov))
+                if (!this.m_type2ProviderMap.TryGetValue(hash, out prov))
                 {
+                    // 缓存不存在，从ResourceProviders中查找
                     for (int i = 0; i < ResourceProviders.Count; i++)
                     {
                         var p = ResourceProviders[i];
                         if (p.ProviderId.Equals(location.ProviderId, StringComparison.Ordinal) && (t == null || p.CanProvide(t, location)))
                         {
-                            m_providerMap.Add(hash, prov = p);
+                            // 更新缓存
+                            this.m_type2ProviderMap.Add(hash, prov = p);
                             break;
                         }
                     }
@@ -377,14 +388,19 @@ namespace UnityEngine.ResourceManagement
             var key = new LocationCacheKey(location, desiredType);
             if (m_AssetOperationCache.TryGetValue(key, out op))
             {
+                // 如果已经有对于当前资源的加载请求，则直接返回，refCount+1
                 op.IncrementReferenceCount();
                 return new AsyncOperationHandle(op, location.ToString());;
             }
 
-            Type provType;
-            if (!m_ProviderOperationTypeCache.TryGetValue(desiredType, out provType))
-                m_ProviderOperationTypeCache.Add(desiredType, provType = typeof(ProviderOperation<>).MakeGenericType(new Type[] { desiredType }));
-            op = CreateOperation<IAsyncOperation>(provType, provType.GetHashCode(), key, m_ReleaseOpCached);
+            Type providerType;
+            // 比如像加载Texture2d类型的资源，但是找不到Texture2d的Provider，这里构造一个
+            if (!m_ProviderOperationTypeCache.TryGetValue(desiredType, out providerType))
+            {  
+                providerType = typeof(ProviderOperation<>).MakeGenericType(new Type[] { desiredType });
+                m_ProviderOperationTypeCache.Add(desiredType, providerType);
+            }
+            op = CreateOperation<IAsyncOperation>(providerType, providerType.GetHashCode(), key, m_ReleaseOpCached);
 
             // Calculate the hash of the dependencies
             int depHash = location.DependencyHashCode;
@@ -405,6 +421,7 @@ namespace UnityEngine.ResourceManagement
             return handle;
         }
 
+        // assetType:providerType
         Dictionary<Type, Type> m_ProviderOperationTypeCache = new Dictionary<Type, Type>();
 
         /// <summary>
@@ -429,13 +446,14 @@ namespace UnityEngine.ResourceManagement
         /// <typeparam name="TObject">Object type associated with this operation.</typeparam>
         public AsyncOperationHandle<TObject> StartOperation<TObject>(AsyncOperationBase<TObject> operation, AsyncOperationHandle dependency)
         {
-            operation.Start(this, dependency, m_UpdateCallbacks);
+            // ResourceManager的StartOp最终走的都是AsyncOperationBase的Start
+            operation.Start(this, dependency, this.m_UpdateDelList);
             return operation.Handle;
         }
 
         internal AsyncOperationHandle StartOperation(IAsyncOperation operation, AsyncOperationHandle dependency)
         {
-            operation.Start(this, dependency, m_UpdateCallbacks);
+            operation.Start(this, dependency, this.m_UpdateDelList);
             return operation.Handle;
         }
 
@@ -464,7 +482,7 @@ namespace UnityEngine.ResourceManagement
             }
 
             ///<inheritdoc />
-            protected  override bool InvokeWaitForCompletion()
+            protected  override bool IsComplete()
             {
                 m_RM?.Update(Time.unscaledDeltaTime);
                 if (!HasExecuted)
@@ -472,7 +490,7 @@ namespace UnityEngine.ResourceManagement
                 return true;
             }
 
-            protected override void Execute()
+            protected override void WhenDependentCompleted()
             {
                 Complete(Result, m_Success, m_Exception, m_ReleaseDependenciesOnFailure);
             }
@@ -873,7 +891,7 @@ namespace UnityEngine.ResourceManagement
 
             public Scene InstanceScene() => m_scene;
 
-            protected override void Destroy()
+            protected override void WhenRefCountReachZero()
             {
                 m_instanceProvider.ReleaseInstance(m_RM, m_instance);
             }
@@ -887,7 +905,7 @@ namespace UnityEngine.ResourceManagement
             }
 
             ///<inheritdoc />
-            protected  override bool InvokeWaitForCompletion()
+            protected  override bool IsComplete()
             {
                 if (m_dependency.IsValid() && !m_dependency.IsDone)
                     m_dependency.WaitForCompletion();
@@ -899,7 +917,7 @@ namespace UnityEngine.ResourceManagement
                 return IsDone;
             }
 
-            protected override void Execute()
+            protected override void WhenDependentCompleted()
             {
                 Exception e = m_dependency.OperationException;
                 if (m_dependency.Status == AsyncOperationStatus.Succeeded)
@@ -1012,7 +1030,7 @@ namespace UnityEngine.ResourceManagement
         internal void RegisterForDeferredCallback(IAsyncOperation op, bool incrementRefCount = true)
         {
             if (CallbackHooksEnabled && m_InsideExecuteDeferredCallbacksMethod)
-            {
+            {   // 如果此时不能立即插入m_DeferredCompleteCallbacks队列中，则暂时先缓存到m_DeferredCallbacksToRegister中
                 if (m_DeferredCallbacksToRegister == null)
                     m_DeferredCallbacksToRegister = new List<DeferredCallbackRegisterRequest>();
                 m_DeferredCallbacksToRegister.Add
@@ -1035,10 +1053,10 @@ namespace UnityEngine.ResourceManagement
 
         internal void Update(float unscaledDeltaTime)
         {
-            if (m_InsideUpdateMethod)
+            if (m_InsideUpdateMethod) // m_InsideUpdateMethod防止执行Update中途，继续调用Update
                 throw new Exception("Reentering the Update method is not allowed.  This can happen when calling WaitForCompletion on an operation while inside of a callback.");
             m_InsideUpdateMethod = true;
-            m_UpdateCallbacks.Invoke(unscaledDeltaTime);
+            this.m_UpdateDelList.Invoke(unscaledDeltaTime);
             m_UpdatingReceivers = true;
             for (int i = 0; i < m_UpdateReceivers.Count; i++)
                 m_UpdateReceivers[i].Update(unscaledDeltaTime);

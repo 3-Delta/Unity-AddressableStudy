@@ -31,7 +31,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         }
 
         ///<inheritdoc />
-        protected  override bool InvokeWaitForCompletion()
+        protected  override bool IsComplete()
         {
             //If Result is null then we've auto released and need to return
             if (IsDone || Result == null)
@@ -46,7 +46,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
 
             m_RM?.Update(Time.unscaledDeltaTime);
             if (!IsDone && Result != null)
-                Execute();
+                this.WhenDependentCompleted();
             m_RM?.Update(Time.unscaledDeltaTime);
             return IsDone;
         }
@@ -146,7 +146,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             }
         }
 
-        protected override void Execute()
+        protected override void WhenDependentCompleted()
         {
             m_LoadedCount = 0;
             for (int i = 0; i < Result.Count; i++)
@@ -181,7 +181,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             }
         }
 
-        protected override void Destroy()
+        protected override void WhenRefCountReachZero()
         {
             ReleaseDependencies();
         }

@@ -13,18 +13,18 @@ using UnityEngine.ResourceManagement.Util;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
-    internal class FastModeInitializationOperation : AsyncOperationBase<IResourceLocator>
+    internal class FastModeInitOperation : AsyncOperationBase<IResourceLocator>
     {
-        AddressablesImpl m_addressables;
+        AddressablesImpl impl;
         AddressableAssetSettings m_settings;
         internal ResourceManagerDiagnostics m_Diagnostics;
         AsyncOperationHandle<IList<AsyncOperationHandle>> groupOp;
-        public FastModeInitializationOperation(AddressablesImpl addressables, AddressableAssetSettings settings)
+        public FastModeInitOperation(AddressablesImpl impl, AddressableAssetSettings settings)
         {
-            m_addressables = addressables;
+            this.impl = impl;
             m_settings = settings;
-            m_addressables.ResourceManager.RegisterForCallbacks();
-            m_Diagnostics = new ResourceManagerDiagnostics(m_addressables.ResourceManager);
+            this.impl.ResourceManager.RegisterForCallbacks();
+            m_Diagnostics = new ResourceManagerDiagnostics(this.impl.ResourceManager);
         }
 
         static T GetBuilderOfType<T>(AddressableAssetSettings settings) where T : class, IDataBuilder
@@ -39,7 +39,7 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         ///<inheritdoc />
-        protected override bool InvokeWaitForCompletion()
+        protected override bool IsComplete()
         {
             if (IsDone)
                 return true;
@@ -50,37 +50,37 @@ namespace UnityEditor.AddressableAssets.Settings
             return true;
         }
 
-        protected override void Execute()
+        protected override void WhenDependentCompleted()
         {
             var db = GetBuilderOfType<BuildScriptFastMode>(m_settings);
             if (db == null)
                 UnityEngine.Debug.Log($"Unable to find {nameof(BuildScriptFastMode)} builder in settings assets. Using default Instance and Scene Providers.");
 
             var locator = new AddressableAssetSettingsLocator(m_settings);
-            m_addressables.AddResourceLocator(locator);
-            m_addressables.AddResourceLocator(new DynamicResourceLocator(m_addressables));
-            m_addressables.ResourceManager.postProfilerEvents = ProjectConfigData.PostProfilerEvents;
-            if (!m_addressables.ResourceManager.postProfilerEvents)
+            this.impl.AddResourceLocator(locator);
+            this.impl.AddResourceLocator(new DynamicResourceLocator(this.impl));
+            this.impl.ResourceManager.postProfilerEvents = ProjectConfigData.PostProfilerEvents;
+            if (!this.impl.ResourceManager.postProfilerEvents)
             {
                 m_Diagnostics.Dispose();
                 m_Diagnostics = null;
-                m_addressables.ResourceManager.ClearDiagnosticCallbacks();
+                this.impl.ResourceManager.ClearDiagnosticCallbacks();
             }
 
             if (!m_settings.buildSettings.LogResourceManagerExceptions)
                 ResourceManager.ExceptionHandler = null;
 
             //NOTE: for some reason, the data builders can get lost from the settings asset during a domain reload - this only happens in tests and custom instance and scene providers are not needed
-            m_addressables.InstanceProvider = db == null ? new InstanceProvider() : ObjectInitializationData.CreateSerializedInitializationData(db.instanceProviderType.Value).CreateInstance<IInstanceProvider>();
-            m_addressables.SceneProvider = db == null ? new SceneProvider() : ObjectInitializationData.CreateSerializedInitializationData(db.sceneProviderType.Value).CreateInstance<ISceneProvider>();
-            m_addressables.ResourceManager.ResourceProviders.Add(new AssetDatabaseProvider());
-            m_addressables.ResourceManager.ResourceProviders.Add(new TextDataProvider());
-            m_addressables.ResourceManager.ResourceProviders.Add(new JsonAssetProvider());
-            m_addressables.ResourceManager.ResourceProviders.Add(new LegacyResourcesProvider());
-            m_addressables.ResourceManager.ResourceProviders.Add(new AtlasSpriteProvider());
-            m_addressables.ResourceManager.ResourceProviders.Add(new ContentCatalogProvider(m_addressables.ResourceManager));
+            this.impl.InstanceProvider = db == null ? new InstanceProvider() : ObjectInitData.CreateSerializedInitData(db.instanceProviderType.Value).CreateInstance<IInstanceProvider>();
+            this.impl.SceneProvider = db == null ? new SceneProvider() : ObjectInitData.CreateSerializedInitData(db.sceneProviderType.Value).CreateInstance<ISceneProvider>();
+            this.impl.ResourceManager.ResourceProviders.Add(new AssetDatabaseProvider());
+            this.impl.ResourceManager.ResourceProviders.Add(new TextDataProvider());
+            this.impl.ResourceManager.ResourceProviders.Add(new JsonAssetProvider());
+            this.impl.ResourceManager.ResourceProviders.Add(new LegacyResourcesProvider());
+            this.impl.ResourceManager.ResourceProviders.Add(new AtlasSpriteProvider());
+            this.impl.ResourceManager.ResourceProviders.Add(new ContentCatalogProvider(this.impl.ResourceManager));
             WebRequestQueue.SetMaxConcurrentRequests(m_settings.MaxConcurrentWebRequests);
-            m_addressables.CatalogRequestsTimeout = m_settings.CatalogRequestsTimeout;
+            this.impl.CatalogRequestsTimeout = m_settings.CatalogRequestsTimeout;
 
             if (m_settings.InitializationObjects.Count == 0)
             {
@@ -90,21 +90,21 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 List<AsyncOperationHandle> initOperations = new List<AsyncOperationHandle>();
                 foreach (var io in m_settings.InitializationObjects)
-                {
-                    if (io is IObjectInitializationDataProvider)
+                {   // 执行AddressableSettings文件中配置的初始化项， 因为是CacheInitialization类型的，所以会继续执行CacheInitialization.cs.Start
+                    if (io is IObjectInitializationDataProvider provider)
                     {
-                        var ioData = (io as IObjectInitializationDataProvider).CreateObjectInitializationData();
-                        var h = ioData.GetAsyncInitHandle(m_addressables.ResourceManager);
+                        var ioData = provider.CreateObjectInitData();
+                        var h = ioData.GetAsyncInitHandle(this.impl.ResourceManager);
                         initOperations.Add(h);
                     }
                 }
 
-                groupOp = m_addressables.ResourceManager.CreateGenericGroupOperation(initOperations, true);
+                groupOp = this.impl.ResourceManager.CreateGenericGroupOperation(initOperations, true);
                 groupOp.Completed += op =>
                 {
                     bool success = op.Status == AsyncOperationStatus.Succeeded;
                     Complete(locator, success, success ? "" : $"{op.DebugName}, status={op.Status}, result={op.Result} failed initialization.");
-                    m_addressables.Release(op);
+                    this.impl.Release(op);
                 };
             }
         }

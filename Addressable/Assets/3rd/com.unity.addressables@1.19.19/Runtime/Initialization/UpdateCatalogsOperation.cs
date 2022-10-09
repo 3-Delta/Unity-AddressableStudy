@@ -9,7 +9,7 @@ namespace UnityEngine.AddressableAssets
 {
     class UpdateCatalogsOperation : AsyncOperationBase<List<IResourceLocator>>
     {
-        AddressablesImpl m_Addressables;
+        AddressablesImpl impl;
         List<AddressablesImpl.ResourceLocatorInfo> m_LocatorInfos;
         AsyncOperationHandle<IList<AsyncOperationHandle>> m_DepOp;
         AsyncOperationHandle<bool> m_CleanCacheOp;
@@ -17,7 +17,7 @@ namespace UnityEngine.AddressableAssets
 
         public UpdateCatalogsOperation(AddressablesImpl aa)
         {
-            m_Addressables = aa;
+            this.impl = aa;
         }
 
         public AsyncOperationHandle<List<IResourceLocator>> Start(IEnumerable<string> catalogIds, bool autoCleanBundleCache)
@@ -28,25 +28,25 @@ namespace UnityEngine.AddressableAssets
             {
                 if (c == null)
                     continue;
-                var loc = m_Addressables.GetLocatorInfo(c);
+                var loc = this.impl.GetLocatorInfo(c);
                 locations.Add(loc.CatalogLocation);
                 m_LocatorInfos.Add(loc);
             }
             if (locations.Count == 0)
-                return m_Addressables.ResourceManager.CreateCompletedOperation(default(List<IResourceLocator>), "Content update not available.");
+                return this.impl.ResourceManager.CreateCompletedOperation(default(List<IResourceLocator>), "Content update not available.");
 
-            ContentCatalogProvider ccp = m_Addressables.ResourceManager.ResourceProviders
+            ContentCatalogProvider ccp = this.impl.ResourceManager.ResourceProviders
                 .FirstOrDefault(rp => rp.GetType() == typeof(ContentCatalogProvider)) as ContentCatalogProvider;
             if (ccp != null)
                 ccp.DisableCatalogUpdateOnStart = false;
 
-            m_DepOp = m_Addressables.ResourceManager.CreateGroupOperation<object>(locations);
+            m_DepOp = this.impl.ResourceManager.CreateGroupOperation<object>(locations);
             m_AutoCleanBundleCache = autoCleanBundleCache;
-            return m_Addressables.ResourceManager.StartOperation(this, m_DepOp);
+            return this.impl.ResourceManager.StartOperation(this, m_DepOp);
         }
 
         /// <inheritdoc />
-        protected override bool InvokeWaitForCompletion()
+        protected override bool IsComplete()
         {
             if (IsDone)
                 return true;
@@ -60,13 +60,13 @@ namespace UnityEngine.AddressableAssets
             if (m_CleanCacheOp.IsValid() && !m_CleanCacheOp.IsDone)
                 m_CleanCacheOp.WaitForCompletion();
 
-            m_Addressables.ResourceManager.Update(Time.unscaledDeltaTime);
+            this.impl.ResourceManager.Update(Time.unscaledDeltaTime);
             return IsDone;
         }
 
-        protected override void Destroy()
+        protected override void WhenRefCountReachZero()
         {
-            m_Addressables.Release(m_DepOp);
+            this.impl.Release(m_DepOp);
         }
 
         /// <inheritdoc />
@@ -75,7 +75,7 @@ namespace UnityEngine.AddressableAssets
             dependencies.Add(m_DepOp);
         }
 
-        protected override void Execute()
+        protected override void WhenDependentCompleted()
         {
             var catalogs = new List<IResourceLocator>(m_DepOp.Result.Count);
             for (int i = 0; i < m_DepOp.Result.Count; i++)
@@ -99,7 +99,7 @@ namespace UnityEngine.AddressableAssets
                 Complete(catalogs, true, null);
             else
             {
-                m_CleanCacheOp = m_Addressables.CleanBundleCache(m_DepOp, false);
+                m_CleanCacheOp = this.impl.CleanBundleCache(m_DepOp, false);
                 OnCleanCacheCompleted(m_CleanCacheOp, catalogs);
             }
         }

@@ -92,7 +92,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             if (location == null)
                 throw new ArgumentNullException("location");
             var obj = asset as Object;
-            //GameObjects cannot be resleased via Object.Destroy because they are considered an asset
+            //GameObjects cannot be resleased via Object.WhenRefCountReachZero because they are considered an asset
             //but they can't be unloaded via Resources.UnloadAsset since they are NOT an asset?
             if (obj != null && !(obj is GameObject))
                 Resources.UnloadAsset(obj);

@@ -595,7 +595,7 @@ namespace UnityEngine.AddressableAssets
         }
         
         /// <summary>
-        /// Initialize the Addressables system, if needed.
+        /// Init the Addressables system, if needed.
         /// </summary>
         /// <remarks>
         /// The Addressables system initializes itself at runtime the first time you call an Addressables API function.
@@ -613,7 +613,7 @@ namespace UnityEngine.AddressableAssets
         /// contains a list of Addressable keys and a method that can be used to gather the <see cref="IResourceLocation"/>
         /// instances for a given key and asset type. You must access the `Result` object in a <see cref="AsyncOperationHandle{TObject}.Completed"/>
         /// event handler. To access the handle in a coroutine or Task-based function, pass `false` to the
-        /// <see cref="InitializeAsync(bool)"/> overload of this function. Otherwise, the Addressables system
+        /// <see cref="InitAsync(bool)"/> overload of this function. Otherwise, the Addressables system
         /// releases the <see cref="AsyncOperationHandle{TObject}"/> object before control returns to your code.
         ///
         /// Initializing Addressables manually can improve performance of your first loading operations since they do not
@@ -625,13 +625,13 @@ namespace UnityEngine.AddressableAssets
         /// * [Managing catalogs at runtime](xref:addressables-api-load-content-catalog-async)
         /// </remarks>
         /// <returns>The operation handle for the request.</returns>
-        public static AsyncOperationHandle<IResourceLocator> InitializeAsync()
+        public static AsyncOperationHandle<IResourceLocator> InitAsync()
         {
-            return Impl.InitializeAsync();
+            return Impl.InitAsync();
         }
 
         /// <summary>
-        /// Initialize the Addressables system, if needed.
+        /// Init the Addressables system, if needed.
         /// </summary>
         /// <remarks>
         /// The Addressables system initializes itself at runtime the first time you call an Addressables API function.
@@ -660,9 +660,9 @@ namespace UnityEngine.AddressableAssets
         /// </remarks>
         /// <param name="autoReleaseHandle">If true, the handle is automatically released on completion.</param>
         /// <returns>The operation handle for the request.</returns>
-        public static AsyncOperationHandle<IResourceLocator> InitializeAsync(bool autoReleaseHandle)
+        public static AsyncOperationHandle<IResourceLocator> InitAsync(bool autoReleaseHandle)
         {
-            return Impl.InitializeAsync(autoReleaseHandle);
+            return Impl.InitAsync(autoReleaseHandle);
         }
 
         /// <summary>

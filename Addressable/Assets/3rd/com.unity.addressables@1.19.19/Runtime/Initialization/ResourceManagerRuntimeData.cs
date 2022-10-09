@@ -57,11 +57,11 @@ namespace UnityEngine.AddressableAssets.Initialization
 
         [FormerlySerializedAs("m_extraInitializationData")]
         [SerializeField]
-        List<ObjectInitializationData> m_ExtraInitializationData = new List<ObjectInitializationData>();
+        List<ObjectInitData> m_ExtraInitializationData = new List<ObjectInitData>();
         /// <summary>
         /// The list of initialization data.  These objects will get deserialized and initialized during the Addressables initialization process.  This happens after resource providers have been set up but before any catalogs are loaded.
         /// </summary>
-        public List<ObjectInitializationData> InitializationObjects { get { return m_ExtraInitializationData; } }
+        public List<ObjectInitData> InitializationObjects { get { return m_ExtraInitializationData; } }
 
         [SerializeField] private bool m_DisableCatalogUpdateOnStart = false;
 

@@ -19,12 +19,12 @@ namespace UnityEngine.AddressableAssets.Initialization
         /// Sets properties of the Caching system.
         /// </summary>
         /// <param name="id">The id of thei object.</param>
-        /// <param name="dataStr">The JSON serialized CacheInitializationData object.</param>
+        /// <param name="dataStr">The JSON serialized CacheInitData object.</param>
         /// <returns>True if the initialization succeeded.</returns>
-        public bool Initialize(string id, string dataStr)
+        public bool Init(string id, string dataStr)
         {
 #if ENABLE_CACHING
-            var data = JsonUtility.FromJson<CacheInitializationData>(dataStr);
+            var data = JsonUtility.FromJson<CacheInitData>(dataStr);
             if (data != null)
             {
                 Caching.compressionEnabled = data.CompressionEnabled;
@@ -54,10 +54,10 @@ namespace UnityEngine.AddressableAssets.Initialization
         }
 
         /// <inheritdoc/>
-        public virtual AsyncOperationHandle<bool> InitializeAsync(ResourceManager rm, string id, string data)
+        public virtual AsyncOperationHandle<bool> InitAsync(ResourceManager rm, string id, string data)
         {
             CacheInitOp op = new CacheInitOp();
-            op.Init(() => { return Initialize(id, data); });
+            op.Init(() => { return this.Init(id, data); });
             return rm.StartOperation(op, default);
         }
 
@@ -82,7 +82,7 @@ namespace UnityEngine.AddressableAssets.Initialization
             }
 
             /// <inheritdoc />
-            protected override bool InvokeWaitForCompletion()
+            protected override bool IsComplete()
             {
 #if ENABLE_CACHING
                 m_RM?.Update(Time.unscaledDeltaTime);
@@ -114,7 +114,7 @@ namespace UnityEngine.AddressableAssets.Initialization
 #endif
             }
 
-            protected override void Execute()
+            protected override void WhenDependentCompleted()
             {
                 ((IUpdateReceiver)this).Update(0.0f);
             }
@@ -125,7 +125,7 @@ namespace UnityEngine.AddressableAssets.Initialization
     /// Contains settings for the Caching system.
     /// </summary>
     [Serializable]
-    public class CacheInitializationData
+    public class CacheInitData
     {
         [FormerlySerializedAs("m_compressionEnabled")]
         [SerializeField]

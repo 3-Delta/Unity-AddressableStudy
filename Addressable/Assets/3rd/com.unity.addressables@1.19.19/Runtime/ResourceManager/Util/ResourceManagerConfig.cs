@@ -15,12 +15,13 @@ namespace UnityEngine.ResourceManagement.Util
     public interface IInitializableObject
     {
         /// <summary>
-        /// Initialize a constructed object.
+        /// Init a constructed object.
         /// </summary>
         /// <param name="id">The id of the object.</param>
         /// <param name="data">Serialized data for the object.</param>
         /// <returns>The result of the initialization.</returns>
-        bool Initialize(string id, string data);
+        /// 通过初始化
+        bool Init(string id, string data);
 
         /// <summary>
         /// Async operation for initializing a constructed object.
@@ -29,7 +30,8 @@ namespace UnityEngine.ResourceManagement.Util
         /// <param name="id">The id of the object.</param>
         /// <param name="data">Serialized data for the object.</param>
         /// <returns>Async operation</returns>
-        AsyncOperationHandle<bool> InitializeAsync(ResourceManager rm, string id, string data);
+        /// 异步初始化
+        AsyncOperationHandle<bool> InitAsync(ResourceManager rm, string id, string data);
     }
 
 
@@ -46,7 +48,7 @@ namespace UnityEngine.ResourceManagement.Util
         /// Construct initialization data for runtime.
         /// </summary>
         /// <returns>Init data that will be deserialized at runtime.</returns>
-        ObjectInitializationData CreateObjectInitializationData();
+        ObjectInitData CreateObjectInitData();
     }
 
     /// <summary>
@@ -175,7 +177,7 @@ namespace UnityEngine.ResourceManagement.Util
     public class LinkedListNodeCache<T>
     {
         int m_NodesCreated = 0;
-        LinkedList<T> m_NodeCache;
+        LinkedList<T> m_NodePool;
         /// <summary>
         /// Creates or returns a LinkedListNode of the requested type and set the value.
         /// </summary>
@@ -183,12 +185,12 @@ namespace UnityEngine.ResourceManagement.Util
         /// <returns>A LinkedListNode with the value set to val.</returns>
         public LinkedListNode<T> Acquire(T val)
         {
-            if (m_NodeCache != null)
+            if (this.m_NodePool != null)
             {
-                var n = m_NodeCache.First;
+                var n = this.m_NodePool.First;
                 if (n != null)
                 {
-                    m_NodeCache.RemoveFirst();
+                    this.m_NodePool.RemoveFirst();
                     n.Value = val;
                     return n;
                 }
@@ -203,15 +205,15 @@ namespace UnityEngine.ResourceManagement.Util
         /// <param name="node"></param>
         public void Release(LinkedListNode<T> node)
         {
-            if (m_NodeCache == null)
-                m_NodeCache = new LinkedList<T>();
+            if (this.m_NodePool == null)
+                this.m_NodePool = new LinkedList<T>();
 
             node.Value = default(T);
-            m_NodeCache.AddLast(node);
+            this.m_NodePool.AddLast(node);
         }
 
         internal int CreatedNodeCount { get { return m_NodesCreated; } }
-        internal int CachedNodeCount { get { return m_NodeCache == null ? 0 : m_NodeCache.Count; } }
+        internal int CachedNodeCount { get { return this.m_NodePool == null ? 0 : this.m_NodePool.Count; } }
     }
 
     internal static class GlobalLinkedListNodeCache<T>
@@ -317,7 +319,7 @@ namespace UnityEngine.ResourceManagement.Util
     /// Contains data used to construct and initialize objects at runtime.
     /// </summary>
     [Serializable]
-    public struct ObjectInitializationData
+    public struct ObjectInitData
     {
 #pragma warning disable 0649
         [FormerlySerializedAs("m_id")]
@@ -340,7 +342,7 @@ namespace UnityEngine.ResourceManagement.Util
         [SerializeField]
         string m_Data;
         /// <summary>
-        /// String representation of the data that will be passed to the IInitializableObject.Initialize method of the created object.  This is usually a JSON string of the serialized data object.
+        /// String representation of the data that will be passed to the IInitializableObject.Init method of the created object.  This is usually a JSON string of the serialized data object.
         /// </summary>
         public string Data { get { return m_Data; } }
 #pragma warning restore 0649
@@ -352,11 +354,11 @@ namespace UnityEngine.ResourceManagement.Util
         /// <returns>Returns information about the initialization data.</returns>
         public override string ToString()
         {
-            return string.Format("ObjectInitializationData: id={0}, type={1}", m_Id, m_ObjectType);
+            return string.Format("ObjectInitData: id={0}, type={1}", m_Id, m_ObjectType);
         }
 
         /// <summary>
-        /// Create an instance of the defined object.  Initialize will be called on it with the id and data if it implements the IInitializableObject interface.
+        /// Create an instance of the defined object.  Init will be called on it with the id and data if it implements the IInitializableObject interface.
         /// </summary>
         /// <typeparam name="TObject">The instance type.</typeparam>
         /// <param name="idOverride">Optional id to assign to the created object.  This only applies to objects that inherit from IInitializableObject.</param>
@@ -372,7 +374,7 @@ namespace UnityEngine.ResourceManagement.Util
                 var serObj = obj as IInitializableObject;
                 if (serObj != null)
                 {
-                    if (!serObj.Initialize(idOverride == null ? m_Id : idOverride, m_Data))
+                    if (!serObj.Init(idOverride == null ? m_Id : idOverride, m_Data))
                         return default(TObject);
                 }
                 return (TObject)obj;
@@ -400,7 +402,7 @@ namespace UnityEngine.ResourceManagement.Util
                 var obj = Activator.CreateInstance(objType, true);
                 var serObj = obj as IInitializableObject;
                 if (serObj != null)
-                    return serObj.InitializeAsync(rm, idOverride == null ? m_Id : idOverride, m_Data);
+                    return serObj.InitAsync(rm, idOverride == null ? m_Id : idOverride, m_Data);
                 return default(AsyncOperationHandle);
             }
             catch (Exception ex)
@@ -419,9 +421,9 @@ namespace UnityEngine.ResourceManagement.Util
         /// <param name="id">The object id.</param>
         /// <param name="dataObject">The serializable object that will be saved into the Data string via the JSONUtility.ToJson method.</param>
         /// <returns>Contains data used to construct and initialize an object at runtime.</returns>
-        public static ObjectInitializationData CreateSerializedInitializationData(Type objectType, string id = null, object dataObject = null)
+        public static ObjectInitData CreateSerializedInitData(Type objectType, string id = null, object dataObject = null)
         {
-            return new ObjectInitializationData
+            return new ObjectInitData
             {
                 m_ObjectType = new SerializedType { Value = objectType },
                 m_Id = string.IsNullOrEmpty(id) ? objectType.FullName : id,
@@ -437,9 +439,9 @@ namespace UnityEngine.ResourceManagement.Util
         /// <param name="id">The ID for the object</param>
         /// <param name="dataObject">The serializable object that will be saved into the Data string via the JSONUtility.ToJson method.</param>
         /// <returns>Contains data used to construct and initialize an object at runtime.</returns>
-        public static ObjectInitializationData CreateSerializedInitializationData<T>(string id = null, object dataObject = null)
+        public static ObjectInitData CreateSerializedInitData<T>(string id = null, object dataObject = null)
         {
-            return CreateSerializedInitializationData(typeof(T), id, dataObject);
+            return CreateSerializedInitData(typeof(T), id, dataObject);
         }
 
         /// <summary>

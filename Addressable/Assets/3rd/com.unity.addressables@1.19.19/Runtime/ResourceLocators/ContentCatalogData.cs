@@ -84,11 +84,11 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         }
 
         [SerializeField]
-        ObjectInitializationData m_InstanceProviderData;
+        ObjectInitData m_InstanceProviderData;
         /// <summary>
         /// Data for the Addressables.ResourceManager.InstanceProvider initialization;
         /// </summary>
-        public ObjectInitializationData InstanceProviderData
+        public ObjectInitData InstanceProviderData
         {
             get
             {
@@ -100,11 +100,11 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             }
         }
         [SerializeField]
-        ObjectInitializationData m_SceneProviderData;
+        ObjectInitData m_SceneProviderData;
         /// <summary>
         /// Data for the Addressables.ResourceManager.InstanceProvider initialization;
         /// </summary>
-        public ObjectInitializationData SceneProviderData
+        public ObjectInitData SceneProviderData
         {
             get
             {
@@ -116,11 +116,11 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             }
         }
         [SerializeField]
-        internal List<ObjectInitializationData> m_ResourceProviderData = new List<ObjectInitializationData>();
+        internal List<ObjectInitData> m_ResourceProviderData = new List<ObjectInitData>();
         /// <summary>
         /// The list of resource provider data.  Each entry will add an IResourceProvider to the Addressables.ResourceManager.ResourceProviders list.
         /// </summary>
-        public List<ObjectInitializationData> ResourceProviderData
+        public List<ObjectInitData> ResourceProviderData
         {
             get { return m_ResourceProviderData; }
             set { m_ResourceProviderData = value; }

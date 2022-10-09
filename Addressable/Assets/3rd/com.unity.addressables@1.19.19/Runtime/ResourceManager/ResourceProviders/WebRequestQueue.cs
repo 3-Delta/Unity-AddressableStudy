@@ -67,8 +67,10 @@ namespace UnityEngine.ResourceManagement
 
                 queueOperation.Complete(webRequestAsyncOp);
             }
-            else
+            else {
+                // 插入队列，等待后续执行
                 s_QueuedOperations.Enqueue(queueOperation);
+            }
 
             return queueOperation;
         }
@@ -86,6 +88,7 @@ namespace UnityEngine.ResourceManagement
                 }
                 foreach (UnityWebRequestAsyncOperation webRequestAsyncOp in completedRequests)
                 {
+                    // 其实就是Sleep线程，等到queue中某个request被彻底执行完毕
                     bool requestIsActive = s_QueuedOperations.Peek() == request;
                     webRequestAsyncOp.completed -= OnWebAsyncOpComplete;
                     OnWebAsyncOpComplete(webRequestAsyncOp);
@@ -100,6 +103,7 @@ namespace UnityEngine.ResourceManagement
         {
             s_ActiveRequests.Remove((operation as UnityWebRequestAsyncOperation));
 
+            // active队列中删除，从queue中取出重新进入active
             if (s_QueuedOperations.Count > 0)
             {
                 var nextQueuedOperation = s_QueuedOperations.Dequeue();

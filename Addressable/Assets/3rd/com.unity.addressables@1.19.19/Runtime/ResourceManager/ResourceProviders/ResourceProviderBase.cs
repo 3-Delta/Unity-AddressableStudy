@@ -35,7 +35,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         }
 
         /// <inheritdoc/>
-        public virtual bool Initialize(string id, string data)
+        public virtual bool Init(string id, string data)
         {
             m_ProviderId = id;
             return !string.IsNullOrEmpty(m_ProviderId);
@@ -82,10 +82,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         public abstract void Provide(ProvideHandle provideHandle);
 
         /// <inheritdoc/>
-        public virtual AsyncOperationHandle<bool> InitializeAsync(ResourceManager rm, string id, string data)
+        public virtual AsyncOperationHandle<bool> InitAsync(ResourceManager rm, string id, string data)
         {
             BaseInitAsyncOp baseInitOp = new BaseInitAsyncOp();
-            baseInitOp.Init(() => Initialize(id, data));
+            baseInitOp.Init(() => this.Init(id, data));
             return rm.StartOperation(baseInitOp, default);
         }
 
@@ -101,7 +101,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             }
 
             ///<inheritdoc />
-            protected  override bool InvokeWaitForCompletion()
+            protected  override bool IsComplete()
             {
                 m_RM?.Update(Time.unscaledDeltaTime);
                 if (!HasExecuted)
@@ -109,7 +109,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 return true;
             }
 
-            protected override void Execute()
+            protected override void WhenDependentCompleted()
             {
                 if (m_CallBack != null)
                     Complete(m_CallBack(), true, "");

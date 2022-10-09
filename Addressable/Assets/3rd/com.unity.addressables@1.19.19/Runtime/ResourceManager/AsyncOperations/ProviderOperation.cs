@@ -55,7 +55,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         }
 
         ///<inheritdoc />
-        protected  override bool InvokeWaitForCompletion()
+        protected  override bool IsComplete()
         {
             if (IsDone)
                 return true;
@@ -217,7 +217,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             }
         }
 
-        protected override void Execute()
+        protected override void WhenDependentCompleted()
         {
             Debug.Assert(m_DepOp.IsDone);
 
@@ -277,7 +277,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             return IsDone;
         }
 
-        protected override void Destroy()
+        protected override void WhenRefCountReachZero()
         {
             if (m_NeedsRelease)
                 m_Provider.Release(m_Location, Result);

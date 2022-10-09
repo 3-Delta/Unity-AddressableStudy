@@ -52,7 +52,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         /// <param name="id">The provider id</param>
         /// <param name="data">The data string, this is assumed to be the virtual bundle data path</param>
         /// <returns>true if the data is as expected</returns>
-        public override bool Initialize(string id, string data)
+        public override bool Init(string id, string data)
         {
             VirtualAssetBundleRuntimeData bundleData = JsonUtility.FromJson<VirtualAssetBundleRuntimeData>(data);
             return InitializeInternal(id, bundleData);

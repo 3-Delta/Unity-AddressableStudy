@@ -8,13 +8,13 @@ namespace UnityEngine.AddressableAssets
 {
     class CheckCatalogsOperation : AsyncOperationBase<List<string>>
     {
-        AddressablesImpl m_Addressables;
+        AddressablesImpl impl;
         List<string> m_LocalHashes;
         List<AddressablesImpl.ResourceLocatorInfo> m_LocatorInfos;
         AsyncOperationHandle<IList<AsyncOperationHandle>> m_DepOp;
         public CheckCatalogsOperation(AddressablesImpl aa)
         {
-            m_Addressables = aa;
+            this.impl = aa;
         }
 
         public AsyncOperationHandle<List<string>> Start(List<AddressablesImpl.ResourceLocatorInfo> locatorInfos)
@@ -32,17 +32,17 @@ namespace UnityEngine.AddressableAssets
                 }
             }
 
-            ContentCatalogProvider ccp = m_Addressables.ResourceManager.ResourceProviders
+            ContentCatalogProvider ccp = this.impl.ResourceManager.ResourceProviders
                 .FirstOrDefault(rp => rp.GetType() == typeof(ContentCatalogProvider)) as ContentCatalogProvider;
             if (ccp != null)
                 ccp.DisableCatalogUpdateOnStart = false;
 
-            m_DepOp = m_Addressables.ResourceManager.CreateGroupOperation<string>(locations);
-            return m_Addressables.ResourceManager.StartOperation(this, m_DepOp);
+            m_DepOp = this.impl.ResourceManager.CreateGroupOperation<string>(locations);
+            return this.impl.ResourceManager.StartOperation(this, m_DepOp);
         }
 
         /// <inheritdoc />
-        protected override bool InvokeWaitForCompletion()
+        protected override bool IsComplete()
         {
             if (IsDone)
                 return true;
@@ -58,9 +58,9 @@ namespace UnityEngine.AddressableAssets
             return IsDone;
         }
 
-        protected override void Destroy()
+        protected override void WhenRefCountReachZero()
         {
-            m_Addressables.Release(m_DepOp);
+            this.impl.Release(m_DepOp);
         }
 
         /// <inheritdoc />
@@ -113,7 +113,7 @@ namespace UnityEngine.AddressableAssets
             return result;
         }
 
-        protected override void Execute()
+        protected override void WhenDependentCompleted()
         {
             var result = ProcessDependentOpResults(m_DepOp.Result, m_LocatorInfos, m_LocalHashes, out string errorString, out bool success);
             Complete(result, success, errorString);

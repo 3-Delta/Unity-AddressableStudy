@@ -48,7 +48,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             }
 
             ///<inheritdoc />
-            protected override bool InvokeWaitForCompletion()
+            protected override bool IsComplete()
             {
                 if (m_DepOp.IsValid() && !m_DepOp.IsDone)
                     m_DepOp.WaitForCompletion();
@@ -86,7 +86,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             protected override string DebugName { get { return string.Format("Scene({0})", m_Location == null ? "Invalid" : ShortenPath(m_ResourceManager.TransformInternalId(m_Location), false)); } }
 
-            protected override void Execute()
+            protected override void WhenDependentCompleted()
             {
                 var loadingFromBundle = false;
                 if (m_DepOp.IsValid())
@@ -142,12 +142,12 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 #endif
             }
 
-            protected override void Destroy()
+            protected override void WhenRefCountReachZero()
             {
                 //the scene will be unloaded via the UnloadSceneOp as it waits correctlyf or the unload to complete before releasing the load op
                 if (m_DepOp.IsValid())
                     m_DepOp.Release();
-                base.Destroy();
+                base.WhenRefCountReachZero();
             }
 
             protected override float Progress
@@ -199,7 +199,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 m_UnloadOptions = options;
             }
 
-            protected override void Execute()
+            protected override void WhenDependentCompleted()
             {
                 if (m_sceneLoadHandle.IsValid() && m_Instance.Scene.isLoaded)
                 {
@@ -216,7 +216,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             }
 
             ///<inheritdoc />
-            protected override bool InvokeWaitForCompletion()
+            protected override bool IsComplete()
             {
                 m_RM?.Update(Time.unscaledDeltaTime);
                 if (!HasExecuted)

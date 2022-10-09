@@ -15,7 +15,7 @@ namespace UnityEngine.AddressableAssets
 {
     class CleanBundleCacheOperation : AsyncOperationBase<bool>, IUpdateReceiver
     {
-        AddressablesImpl m_Addressables;
+        AddressablesImpl impl;
         AsyncOperationHandle<IList<AsyncOperationHandle>> m_DepOp;
 
         List<string> m_CacheDirsForRemoval;
@@ -26,14 +26,14 @@ namespace UnityEngine.AddressableAssets
 
         public CleanBundleCacheOperation(AddressablesImpl aa, bool forceSingleThreading)
         {
-            m_Addressables = aa;
+            this.impl = aa;
             m_UseMultiThreading = forceSingleThreading ? false : PlatformUtilities.PlatformUsesMultiThreading(Application.platform);
         }
 
         public AsyncOperationHandle<bool> Start(AsyncOperationHandle<IList<AsyncOperationHandle>> depOp)
         {
             m_DepOp = depOp.Acquire();
-            return m_Addressables.ResourceManager.StartOperation(this, m_DepOp);
+            return this.impl.ResourceManager.StartOperation(this, m_DepOp);
         }
 
         public void CompleteInternal(bool result, bool success, string errorMsg)
@@ -43,7 +43,7 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <inheritdoc />
-        protected override bool InvokeWaitForCompletion()
+        protected override bool IsComplete()
         {
             if (!m_DepOp.IsDone)
                 m_DepOp.WaitForCompletion();
@@ -60,7 +60,7 @@ namespace UnityEngine.AddressableAssets
             return IsDone;
         }
 
-        protected override void Destroy()
+        protected override void WhenRefCountReachZero()
         {
             if (m_DepOp.IsValid())
                 m_DepOp.Release();
@@ -71,7 +71,7 @@ namespace UnityEngine.AddressableAssets
             dependencies.Add(m_DepOp);
         }
 
-        protected override void Execute()
+        protected override void WhenDependentCompleted()
         {
             Assert.AreEqual(null, m_EnumerationThread, "CleanBundleCacheOperation has already executed. A worker thread has already been created.");
 
@@ -153,7 +153,7 @@ namespace UnityEngine.AddressableAssets
                     {
                         if (location.Data is AssetBundleRequestOptions options)
                         {
-                            GetLoadInfo(location, m_Addressables.ResourceManager, out LoadType loadType, out string path);
+                            GetLoadInfo(location, this.impl.ResourceManager, out LoadType loadType, out string path);
                             if (loadType == LoadType.Web)
                             {
                                 string cacheDir = Path.Combine(Caching.currentCacheForWriting.path, options.BundleName); // Cache entries are named in this format "baseCachePath/bundleName/hash"

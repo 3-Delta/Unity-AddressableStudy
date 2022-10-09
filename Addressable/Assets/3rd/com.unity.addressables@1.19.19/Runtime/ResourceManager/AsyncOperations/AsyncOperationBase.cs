@@ -19,9 +19,12 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         Type ResultType { get; }
         int Version { get; }
         string DebugName { get; }
+        
+        // 引用计数
         void DecrementReferenceCount();
         void IncrementReferenceCount();
         int ReferenceCount { get; }
+        
         float PercentComplete { get; }
         DownloadStatus GetDownloadStatus(HashSet<object> visited);
         AsyncOperationStatus Status { get; }
@@ -54,13 +57,13 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// This will be called by the resource manager after all dependent operation complete. This method should not be called manually.
         /// A custom operation should override this method and begin work when it is called.
         /// </summary>
-        protected abstract void Execute();
+        protected abstract void WhenDependentCompleted();
 
         /// <summary>
         /// This will be called by the resource manager when the reference count of the operation reaches zero. This method should not be called manually.
         /// A custom operation should override this method and release any held resources
         /// </summary>
-        protected virtual void Destroy() {}
+        protected virtual void WhenRefCountReachZero() {}
 
         /// <summary>
         /// A custom operation should override this method to return the progress of the operation.
@@ -84,29 +87,36 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// </summary>
         public TObject Result { get; set; }
 
-        int m_referenceCount = 1;
         AsyncOperationStatus m_Status;
-        Exception m_Error;
+        
         internal ResourceManager m_RM;
+        
         internal int m_Version;
         internal int Version { get { return m_Version; } }
 
-        DelegateList<AsyncOperationHandle> m_DestroyedAction;
-        DelegateList<AsyncOperationHandle<TObject>> m_CompletedActionT;
+        DelegateList<AsyncOperationHandle> m_DestroyedActionDelList;
+        DelegateList<AsyncOperationHandle<TObject>> m_CompletedActionTDelList;
+        
+        Action<AsyncOperationHandle> m_dependencyCompleteAction;
 
-        internal bool CompletedEventHasListeners => m_CompletedActionT != null && m_CompletedActionT.Count > 0;
-        internal bool DestroyedEventHasListeners => m_DestroyedAction != null && m_DestroyedAction.Count > 0;
+        internal bool CompletedEventHasListeners => this.m_CompletedActionTDelList != null && this.m_CompletedActionTDelList.Count > 0;
+        internal bool DestroyedEventHasListeners => this.m_DestroyedActionDelList != null && this.m_DestroyedActionDelList.Count > 0;
 
         Action<IAsyncOperation> m_OnDestroyAction;
         internal Action<IAsyncOperation> OnDestroy { set { m_OnDestroyAction = value; } }
+        
+        int m_referenceCount = 1;
         internal int ReferenceCount { get { return m_referenceCount; } }
-        Action<AsyncOperationHandle> m_dependencyCompleteAction;
+        
         protected internal bool HasExecuted = false;
 
         /// <summary>
         /// True if the current op has begun but hasn't yet reached completion.  False otherwise.
         /// </summary>
         public bool IsRunning { get;  internal set; }
+        
+        DelegateList<float> m_UpdateDelList;
+        Action<float> m_UpdateCallback;
 
         /// <summary>
         /// Basic constructor for AsyncOperationBase.
@@ -145,9 +155,9 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// Synchronously complete the async operation.
         /// </summary>
         public void WaitForCompletion()
-        {
+        {   // 其实就是当前线程自旋等待，直到目标线程加载完毕
             if (PlatformUtilities.PlatformUsesMultiThreading(Application.platform))
-                while (!InvokeWaitForCompletion()) {}
+                while (!this.IsComplete()) {}
             else
                 throw new Exception($"{Application.platform} does not support synchronous Addressable loading.  Please do not use WaitForCompletion on the {Application.platform} platform.");
         }
@@ -156,7 +166,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// Used for the implementation of WaitForCompletion in an IAsyncOperation.
         /// </summary>
         /// <returns>True if the operation has completed, otherwise false.</returns>
-        protected virtual bool InvokeWaitForCompletion() { return true; }
+        protected virtual bool IsComplete() { return true; }
 
         internal void DecrementReferenceCount()
         {
@@ -173,20 +183,20 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 if (m_RM != null && m_RM.postProfilerEvents)
                     m_RM.PostDiagnosticEvent(new ResourceManager.DiagnosticEventContext(new AsyncOperationHandle(this), ResourceManager.DiagnosticEventType.AsyncOperationDestroy));
 
-                if (m_DestroyedAction != null)
+                if (this.m_DestroyedActionDelList != null)
                 {
-                    m_DestroyedAction.Invoke(new AsyncOperationHandle<TObject>(this));
-                    m_DestroyedAction.Clear();
+                    this.m_DestroyedActionDelList.Invoke(new AsyncOperationHandle<TObject>(this));
+                    this.m_DestroyedActionDelList.Clear();
                 }
 
-                Destroy();
+                this.WhenRefCountReachZero();
                 Result = default(TObject);
                 m_referenceCount = 1;
-                m_Status = AsyncOperationStatus.None;
+                m_Status = AsyncOperationStatus.None; // 状态重置
                 m_taskCompletionSource = null;
                 m_taskCompletionSourceTypeless = null;
                 m_Error = null;
-                m_Version++;
+                m_Version++; // refCount为0的时候会修改version
                 m_RM = null;
 
                 if (m_OnDestroyAction != null)
@@ -198,7 +208,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         }
 
         TaskCompletionSource<TObject> m_taskCompletionSource;
-        internal Task<TObject> Task
+        internal Task<TObject> Task // 有具体泛型类型的Task
         {
             get
             {
@@ -213,7 +223,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         }
 
         TaskCompletionSource<object> m_taskCompletionSourceTypeless;
-        Task<object> IAsyncOperation.Task
+        Task<object> IAsyncOperation.Task // 有具体类型,用object代替的Task
         {
             get
             {
@@ -243,7 +253,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         bool m_InDeferredCallbackQueue;
         void RegisterForDeferredCallbackEvent(bool incrementReferenceCount = true)
         {
-            if (IsDone && !m_InDeferredCallbackQueue)
+            if (IsDone && !m_InDeferredCallbackQueue) // 如果已完成 并且 不在队列中，那未完成呢？
             {
                 m_InDeferredCallbackQueue = true;
                 m_RM.RegisterForDeferredCallback(this, incrementReferenceCount);
@@ -254,33 +264,20 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         {
             add
             {
-                if (m_CompletedActionT == null)
-                    m_CompletedActionT = DelegateList<AsyncOperationHandle<TObject>>.CreateWithGlobalCache();
-                m_CompletedActionT.Add(value);
+                // 添加回调，就会尝试添加到延迟队列中
+                if (this.m_CompletedActionTDelList == null)
+                    this.m_CompletedActionTDelList = DelegateList<AsyncOperationHandle<TObject>>.CreateWithGlobalCache();
+                this.m_CompletedActionTDelList.Add(value);
                 RegisterForDeferredCallbackEvent();
             }
             remove
             {
-                m_CompletedActionT?.Remove(value);
+                this.m_CompletedActionTDelList?.Remove(value);
             }
         }
-
-        internal event Action<AsyncOperationHandle> Destroyed
-        {
-            add
-            {
-                if (m_DestroyedAction == null)
-                    m_DestroyedAction = DelegateList<AsyncOperationHandle>.CreateWithGlobalCache();
-                m_DestroyedAction.Add(value);
-            }
-            remove
-            {
-                m_DestroyedAction?.Remove(value);
-            }
-        }
-
+        
         internal event Action<AsyncOperationHandle> CompletedTypeless
-        {
+        {   // 内部使用的依然是Completed
             add
             {
                 Completed += s => value(s);
@@ -291,6 +288,22 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             }
         }
 
+        internal event Action<AsyncOperationHandle> Destroyed
+        {
+            add
+            {
+                if (this.m_DestroyedActionDelList == null)
+                    this.m_DestroyedActionDelList = DelegateList<AsyncOperationHandle>.CreateWithGlobalCache();
+                this.m_DestroyedActionDelList.Add(value);
+            }
+            remove
+            {
+                this.m_DestroyedActionDelList?.Remove(value);
+            }
+        }
+        
+        Exception m_Error;
+        
         /// <inheritdoc />
         internal AsyncOperationStatus Status { get { return m_Status; } }
         /// <inheritdoc />
@@ -300,8 +313,9 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             private set
             {
                 m_Error = value;
-                if (m_Error != null && ResourceManager.ExceptionHandler != null)
+                if (m_Error != null && ResourceManager.ExceptionHandler != null) {
                     ResourceManager.ExceptionHandler(new AsyncOperationHandle(this), value);
+                }
             }
         }
         internal bool MoveNext() { return !IsDone; }
@@ -326,27 +340,8 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 return 1.0f;
             }
         }
-
-        internal void InvokeCompletionEvent()
-        {
-            if (m_CompletedActionT != null)
-            {
-                m_CompletedActionT.Invoke(new AsyncOperationHandle<TObject>(this));
-                m_CompletedActionT.Clear();
-            }
-            if (m_taskCompletionSource != null)
-                m_taskCompletionSource.TrySetResult(Result);
-
-            if (m_taskCompletionSourceTypeless != null)
-                m_taskCompletionSourceTypeless.TrySetResult(Result);
-
-            m_InDeferredCallbackQueue = false;
-        }
-
+        
         internal AsyncOperationHandle<TObject> Handle { get { return new AsyncOperationHandle<TObject>(this); } }
-
-        DelegateList<float> m_UpdateCallbacks;
-        Action<float> m_UpdateCallback;
 
         private void UpdateCallback(float unscaledDeltaTime)
         {
@@ -397,14 +392,15 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <param name="success">True if successful or if the operation failed silently.</param>
         /// <param name="exception">The exception if the operation has failed.</param>
         /// <param name="releaseDependenciesOnFailure">When true, failed operations will release any dependencies that succeeded.</param>
+        /// 最终完成的回调，这个函数由 外部调用
         public void Complete(TObject result, bool success, Exception exception, bool releaseDependenciesOnFailure = true)
         {
-            if (IsDone)
+            if (IsDone) // 已完成，则不进入，如果可以进入，可能在Update中调用的时候出现问题
                 return;
 
             IUpdateReceiver upOp = this as IUpdateReceiver;
-            if (m_UpdateCallbacks != null && upOp != null)
-                m_UpdateCallbacks.Remove(m_UpdateCallback);
+            if (this.m_UpdateDelList != null && upOp != null)
+                this.m_UpdateDelList.Remove(m_UpdateCallback);
 
             Result = result;
             m_Status = success ? AsyncOperationStatus.Succeeded : AsyncOperationStatus.Failed;
@@ -435,6 +431,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 if (cachedOperation?.Key != null)
                     m_RM?.RemoveOperationFromCache(cachedOperation.Key);
 
+                // 加载失败，也会进入deferlist
                 RegisterForDeferredCallbackEvent(false);
             }
             else
@@ -442,12 +439,35 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 InvokeCompletionEvent();
                 DecrementReferenceCount();
             }
+            
+            // 完成之后设置false, Start之后设置true
             IsRunning = false;
         }
+        
+        internal void InvokeCompletionEvent()
+        {
+            if (this.m_CompletedActionTDelList != null)
+            {
+                this.m_CompletedActionTDelList.Invoke(new AsyncOperationHandle<TObject>(this));
+                this.m_CompletedActionTDelList.Clear();
+            }
+            
+            // 处理线程result
+            if (m_taskCompletionSource != null)
+                m_taskCompletionSource.TrySetResult(Result);
 
+            if (m_taskCompletionSourceTypeless != null)
+                m_taskCompletionSourceTypeless.TrySetResult(Result);
+
+            // 设置不在deferlist中
+            m_InDeferredCallbackQueue = false;
+        }
+
+        // dependency是当前op的依赖handler
         internal void Start(ResourceManager rm, AsyncOperationHandle dependency, DelegateList<float> updateCallbacks)
         {
             m_RM = rm;
+            // 完成之后设置false, Start之后设置true
             IsRunning = true;
             HasExecuted = false;
             if (m_RM != null && m_RM.postProfilerEvents)
@@ -456,21 +476,30 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 m_RM.PostDiagnosticEvent(new ResourceManager.DiagnosticEventContext(new AsyncOperationHandle(this), ResourceManager.DiagnosticEventType.AsyncOperationPercentComplete, 0));
             }
 
-            IncrementReferenceCount(); // keep a reference until the operation completes
-            m_UpdateCallbacks = updateCallbacks;
+            // keep a reference until the operation completes
+            IncrementReferenceCount(); 
+            this.m_UpdateDelList = updateCallbacks;
+            
+            // 如果依赖已经完成了，则InvokeExecute，否则注册到Completed，其实最终注册到了ResourceManager的DeferCallbacks队列中了
             if (dependency.IsValid() && !dependency.IsDone)
+            {
                 dependency.Completed += m_dependencyCompleteAction;
-            else
+            }
+            else // dependency是无效的依赖或者依赖已经加载完成
+            {
                 InvokeExecute();
+            }
         }
 
         internal void InvokeExecute()
         {
-            Execute();
+            this.WhenDependentCompleted();
+            
             HasExecuted = true;
+            
             IUpdateReceiver upOp = this as IUpdateReceiver;
             if (upOp != null)
-                m_UpdateCallbacks.Add(m_UpdateCallback);
+                this.m_UpdateDelList.Add(m_UpdateCallback);
         }
 
         event Action<AsyncOperationHandle> IAsyncOperation.CompletedTypeless

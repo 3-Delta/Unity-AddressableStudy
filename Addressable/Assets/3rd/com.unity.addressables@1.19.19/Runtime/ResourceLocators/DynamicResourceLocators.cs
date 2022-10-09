@@ -13,7 +13,7 @@ namespace UnityEngine.AddressableAssets
 {
     internal class DynamicResourceLocator : IResourceLocator
     {
-        AddressablesImpl m_Addressables;
+        AddressablesImpl impl;
         public string LocatorId => nameof(DynamicResourceLocator);
         public virtual IEnumerable<object> Keys => new object[0];
         private string m_AtlasSpriteProviderId = null;
@@ -25,7 +25,7 @@ namespace UnityEngine.AddressableAssets
 		        if (!string.IsNullOrEmpty(m_AtlasSpriteProviderId))
 			        return m_AtlasSpriteProviderId;
 		        
-		        var providers = m_Addressables.ResourceManager.ResourceProviders;
+		        var providers = this.impl.ResourceManager.ResourceProviders;
 		        foreach (IResourceProvider provider in providers)
 		        {
 			        if (provider is AtlasSpriteProvider)
@@ -43,7 +43,7 @@ namespace UnityEngine.AddressableAssets
 
         public DynamicResourceLocator(AddressablesImpl addr)
         {
-            m_Addressables = addr;
+            this.impl = addr;
         }
 
         public bool Locate(object key, Type type, out IList<IResourceLocation> locations)
@@ -51,10 +51,10 @@ namespace UnityEngine.AddressableAssets
             locations = null;
             if (ResourceManagerConfig.ExtractKeyAndSubKey(key, out string mainKey, out string subKey))
             {
-                if (!m_Addressables.GetResourceLocations(mainKey, type, out IList<IResourceLocation> locs))
+                if (!this.impl.GetResourceLocations(mainKey, type, out IList<IResourceLocation> locs))
                 {
                     if (type == typeof(Sprite))
-                        m_Addressables.GetResourceLocations(mainKey, typeof(SpriteAtlas), out locs);
+                        this.impl.GetResourceLocations(mainKey, typeof(SpriteAtlas), out locs);
                 }
 	            
                 if (locs != null && locs.Count > 0)

@@ -4,7 +4,7 @@ using UnityEngine.AddressableAssets.Initialization;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
-    [CustomPropertyDrawer(typeof(CacheInitializationData), true)]
+    [CustomPropertyDrawer(typeof(CacheInitData), true)]
     class CacheInitializationDataDrawer : PropertyDrawer
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)

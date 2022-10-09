@@ -5,6 +5,8 @@ using UnityEditor;
 
 namespace UnityEngine.ResourceManagement.Util
 {
+    // DelayedActionManager就是给Editor下同步操作提供一个delay, 模仿异步操作的延迟的
+    // 通过查找引用，都是在Editor下使用的
     internal class DelayedActionManager : ComponentSingleton<DelayedActionManager>
     {
         struct DelegateInfo
@@ -18,6 +20,8 @@ namespace UnityEngine.ResourceManagement.Util
                 m_Delegate = d;
                 m_Id = s_Id++;
                 m_Target = p;
+                
+                // InvocationTime == Time.unscaledTime + delay
                 InvocationTime = invocationTime;
             }
 
@@ -48,16 +52,26 @@ namespace UnityEngine.ResourceManagement.Util
                 }
             }
         }
-        List<DelegateInfo>[] m_Actions = { new List<DelegateInfo>(), new List<DelegateInfo>() };
+        
+        // 非延迟action
+        List<DelegateInfo>[] m_Actions = {
+            new List<DelegateInfo>(), 
+            new List<DelegateInfo>()
+        };
+        // 延迟action, delay从小到大排序
         LinkedList<DelegateInfo> m_DelayedActions = new LinkedList<DelegateInfo>();
-        Stack<LinkedListNode<DelegateInfo>> m_NodeCache = new Stack<LinkedListNode<DelegateInfo>>(10);
+        
+        Stack<LinkedListNode<DelegateInfo>> nodePool = new Stack<LinkedListNode<DelegateInfo>>(10);
+        
+        // 其实可以忽略这个index,直接Update中一次性循环迭代下去。但是为了Delay模拟的更好，可以延迟2帧的情况，所以这里设计了这个index
         int m_CollectionIndex;
         bool m_DestroyOnCompletion;
+        
         LinkedListNode<DelegateInfo> GetNode(ref DelegateInfo del)
         {
-            if (m_NodeCache.Count > 0)
+            if (this.nodePool.Count > 0)
             {
-                var node = m_NodeCache.Pop();
+                var node = this.nodePool.Pop();
                 node.Value = del;
                 return node;
             }
@@ -85,6 +99,7 @@ namespace UnityEngine.ResourceManagement.Util
             var del = new DelegateInfo(action, Time.unscaledTime + delay, parameters);
             if (delay > 0)
             {
+                // 延迟action
                 if (m_DelayedActions.Count == 0)
                 {
                     m_DelayedActions.AddFirst(GetNode(ref del));
@@ -100,19 +115,21 @@ namespace UnityEngine.ResourceManagement.Util
                         m_DelayedActions.AddBefore(n, GetNode(ref del));
                 }
             }
-            else
+            else {
+                // 非延迟action
                 m_Actions[m_CollectionIndex].Add(del);
+            }
         }
 
 #if UNITY_EDITOR
-        void Awake()
-        {
-            if (!Application.isPlaying)
-            {
-                //                    Debug.Log("DelayedActionManager called outside of play mode, registering with EditorApplication.update.");
-                EditorApplication.update += LateUpdate;
-            }
-        }
+        // void Awake()
+        // {
+        //     if (!Application.isPlaying)
+        //     {
+        //         // Debug.Log("DelayedActionManager called outside of play mode, registering with EditorApplication.update.");
+        //         EditorApplication.update += LateUpdate;
+        //     }
+        // }
 
 #endif
 
@@ -151,7 +168,8 @@ namespace UnityEngine.ResourceManagement.Util
             return !IsActive;
         }
 
-        void LateUpdate()
+        // 两部分功能：1 将delayaction转移到action. 2 一次执行action
+        void LateUpdate() // 编辑器下EditorApplication.update驱动，runtime下正常Update驱动
         {
             InternalLateUpdate(Time.unscaledTime);
         }
@@ -161,8 +179,10 @@ namespace UnityEngine.ResourceManagement.Util
             int iterationCount = 0;
             while (m_DelayedActions.Count > 0 && m_DelayedActions.First.Value.InvocationTime <= t)
             {
+                // 从delayaction队列转移到action队列
                 m_Actions[m_CollectionIndex].Add(m_DelayedActions.First.Value);
-                m_NodeCache.Push(m_DelayedActions.First);
+                
+                this.nodePool.Push(m_DelayedActions.First);
                 m_DelayedActions.RemoveFirst();
             }
 

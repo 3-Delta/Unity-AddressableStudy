@@ -16,7 +16,7 @@ namespace UnityEditor.AddressableAssets.GUI
         int m_ServiceTypeIndex;
 
         /// <summary>
-        /// Initialize the dialog for the given <see cref="AddressableAssetSettings"/>
+        /// Init the dialog for the given <see cref="AddressableAssetSettings"/>
         /// </summary>
         /// <param name="settings"></param>
         public void Initialize(AddressableAssetSettings settings)

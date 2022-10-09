@@ -40,7 +40,7 @@ namespace UnityEngine.ResourceManagement
         }
 
         ///<inheritdoc />
-        protected override bool InvokeWaitForCompletion()
+        protected override bool IsComplete()
         {
             if (IsDone)
                 return true;
@@ -59,7 +59,7 @@ namespace UnityEngine.ResourceManagement
             return m_WrappedOp.IsDone;
         }
 
-        protected override void Execute()
+        protected override void WhenDependentCompleted()
         {
             m_WrappedOp = m_Callback(m_DepOp);
             m_WrappedOp.Completed += m_CachedOnWrappedCompleted;
@@ -74,7 +74,7 @@ namespace UnityEngine.ResourceManagement
             Complete(m_WrappedOp.Result, x.Status == AsyncOperationStatus.Succeeded, ex, m_ReleaseDependenciesOnFailure);
         }
 
-        protected override void Destroy()
+        protected override void WhenRefCountReachZero()
         {
             if (m_WrappedOp.IsValid())
                 m_WrappedOp.Release();
@@ -161,7 +161,7 @@ namespace UnityEngine.ResourceManagement
         }
 
         ///<inheritdoc />
-        protected override bool InvokeWaitForCompletion()
+        protected override bool IsComplete()
         {
             if (IsDone)
                 return true;
@@ -180,9 +180,9 @@ namespace UnityEngine.ResourceManagement
             return true;
         }
 
-        protected override void Execute()
+        protected override void WhenDependentCompleted()
         {
-            m_WrappedOp = m_Callback(m_DepOp);
+            m_WrappedOp = m_Callback.Invoke(m_DepOp);
             m_WrappedOp.Completed += m_CachedOnWrappedCompleted;
             m_Callback = null;
         }
@@ -195,7 +195,7 @@ namespace UnityEngine.ResourceManagement
             Complete(m_WrappedOp.Result, x.Status == AsyncOperationStatus.Succeeded, ex, m_ReleaseDependenciesOnFailure);
         }
 
-        protected override void Destroy()
+        protected override void WhenRefCountReachZero()
         {
             if (m_WrappedOp.IsValid())
                 m_WrappedOp.Release();

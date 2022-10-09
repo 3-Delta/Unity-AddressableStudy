@@ -453,7 +453,7 @@ namespace UnityEngine.AddressableAssets
         static AsyncOperationHandle<T> CreateFailedOperation<T>()
         {
             //this needs to be set in order for ResourceManager.ExceptionHandler to get hooked up to AddressablesImpl.LogException.
-            Addressables.InitializeAsync();
+            Addressables.InitAsync();
             return Addressables.ResourceManager.CreateCompletedOperation(default(T), new Exception("Attempting to load an asset reference that has no asset assigned to it.").Message);
         }
         

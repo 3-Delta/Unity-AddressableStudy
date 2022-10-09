@@ -38,7 +38,7 @@ namespace UnityEditor.AddressableAssets.Settings
     using Object = UnityEngine.Object;
 
     /// <summary>
-    /// Contains editor data for the addressables system.
+    /// Contains editor data for the impl system.
     /// </summary>
     public class AddressableAssetSettings : ScriptableObject
     {
@@ -131,7 +131,7 @@ namespace UnityEditor.AddressableAssets.Settings
 #endif
 
 
-        private const string kImportAssetEntryCollectionOptOutKey = "com.unity.addressables.importAssetEntryCollections.optOut";
+        private const string kImportAssetEntryCollectionOptOutKey = "com.unity.impl.importAssetEntryCollections.optOut";
         internal bool DenyEntryCollectionPermission { get; set; }
 
         /// <summary>
@@ -2223,7 +2223,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     else if (inEditorSceneList)
                         BuiltinSceneCache.ClearState();
 
-                    //any addressables move or resources move (even resources to within resources) needs to refresh the UI.
+                    //any impl move or resources move (even resources to within resources) needs to refresh the UI.
                     relatedAssetChanged = isAlreadyAddressable || startedInResources || endedInResources || inEditorSceneList;
                 }
             }
@@ -2319,7 +2319,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
         /// <summary>
         /// Runs the active player data build script to create runtime data.
-        /// See the [BuildPlayerContent](xref:addressables-api-build-player-content) documentation for more details.
+        /// See the [BuildPlayerContent](xref:impl-api-build-player-content) documentation for more details.
         /// </summary>
         public static void BuildPlayerContent()
         {
@@ -2330,7 +2330,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// Runs the active player data build script to create runtime data.
         /// Any groups referencing CCD group type will have the produced bundles uploaded to the specified non-promotion only bucket.
-        /// See the [BuildPlayerContent](xref:addressables-api-build-player-content) documentation for more details.
+        /// See the [BuildPlayerContent](xref:impl-api-build-player-content) documentation for more details.
         /// </summary>
         public async static Task<AddressableAssetBuildResult> BuildAndReleasePlayerContent()
         {
@@ -2517,7 +2517,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
         /// <summary>
         /// Runs the active player data build script to create runtime data.
-        /// See the [BuildPlayerContent](xref:addressables-api-build-player-content) documentation for more details.
+        /// See the [BuildPlayerContent](xref:impl-api-build-player-content) documentation for more details.
         /// </summary>
         /// <param name="result">Results from running the active player data build script.</param>
         public static void BuildPlayerContent(out AddressablesPlayerBuildResult result)
@@ -2621,9 +2621,9 @@ namespace UnityEditor.AddressableAssets.Settings
             AssetDatabase.Refresh();
         }
 
-        internal AsyncOperationHandle<IResourceLocator> CreatePlayModeInitializationOperation(AddressablesImpl addressables)
+        internal AsyncOperationHandle<IResourceLocator> CreatePlayModeInitializationOperation(AddressablesImpl impl)
         {
-            return addressables.ResourceManager.StartOperation(new FastModeInitializationOperation(addressables, this), default);
+            return impl.ResourceManager.StartOperation(new FastModeInitOperation(impl, this), default);
         }
 
         static Dictionary<string, Action<IEnumerable<AddressableAssetEntry>>> s_CustomAssetEntryCommands = new Dictionary<string, Action<IEnumerable<AddressableAssetEntry>>>();

@@ -68,7 +68,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             set { m_pathFormatStore = value; }
         }
 
-        List<ObjectInitializationData> m_ResourceProviderData;
+        List<ObjectInitData> m_ResourceProviderData;
         List<AssetBundleBuild> m_AllBundleInputDefinitions;
         Dictionary<string, VirtualAssetBundleRuntimeData> m_CreatedProviderIds;
 
@@ -107,7 +107,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 typeof(ContentCatalogProvider), typeof(ContentCatalogData)));
             aaContext.runtimeData.AddressablesVersion = "1.19.19";
             m_CreatedProviderIds = new Dictionary<string, VirtualAssetBundleRuntimeData>();
-            m_ResourceProviderData = new List<ObjectInitializationData>();
+            m_ResourceProviderData = new List<ObjectInitData>();
 
             // 这是group和abb的关系
             var errorString = ProcessAllGroups(aaContext);
@@ -233,7 +233,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 if (kvp.Value != null)
                 {
-                    var bundleProviderData = ObjectInitializationData.CreateSerializedInitializationData<VirtualAssetBundleProvider>(kvp.Key, kvp.Value);
+                    var bundleProviderData = ObjectInitData.CreateSerializedInitData<VirtualAssetBundleProvider>(kvp.Key, kvp.Value);
                     m_ResourceProviderData.Add(bundleProviderData);
                 }
             }
@@ -243,10 +243,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             contentCatalog.ResourceProviderData.AddRange(m_ResourceProviderData);
             foreach (var t in aaContext.providerTypes)
-                contentCatalog.ResourceProviderData.Add(ObjectInitializationData.CreateSerializedInitializationData(t));
+                contentCatalog.ResourceProviderData.Add(ObjectInitData.CreateSerializedInitData(t));
 
-            contentCatalog.InstanceProviderData = ObjectInitializationData.CreateSerializedInitializationData(instanceProviderType.Value);
-            contentCatalog.SceneProviderData = ObjectInitializationData.CreateSerializedInitializationData(sceneProviderType.Value);
+            contentCatalog.InstanceProviderData = ObjectInitData.CreateSerializedInitData(instanceProviderType.Value);
+            contentCatalog.SceneProviderData = ObjectInitData.CreateSerializedInitData(sceneProviderType.Value);
 
             //save catalog
             WriteFile(string.Format(m_PathFormat, "", "catalog"), JsonUtility.ToJson(contentCatalog), builderInput.Registry);
@@ -254,7 +254,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             foreach (var io in aaSettings.InitializationObjects)
             {
                 if (io is IObjectInitializationDataProvider)
-                    aaContext.runtimeData.InitializationObjects.Add((io as IObjectInitializationDataProvider).CreateObjectInitializationData());
+                    aaContext.runtimeData.InitializationObjects.Add((io as IObjectInitializationDataProvider).CreateObjectInitData());
             }
 
             var settingsPath = string.Format(m_PathFormat, "", "settings");
@@ -279,7 +279,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     if (!m_CreatedProviderIds.ContainsKey(typeof(LegacyResourcesProvider).Name))
                     {
                         m_CreatedProviderIds.Add(typeof(LegacyResourcesProvider).Name, null);
-                        m_ResourceProviderData.Add(ObjectInitializationData.CreateSerializedInitializationData(typeof(LegacyResourcesProvider)));
+                        m_ResourceProviderData.Add(ObjectInitData.CreateSerializedInitData(typeof(LegacyResourcesProvider)));
                     }
                 }
                 return errorString;
@@ -303,7 +303,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 m_CreatedProviderIds.Add(assetProviderId, null);
 
-                var assetProviderData = ObjectInitializationData.CreateSerializedInitializationData<VirtualBundledAssetProvider>(assetProviderId);
+                var assetProviderData = ObjectInitData.CreateSerializedInitData<VirtualBundledAssetProvider>(assetProviderId);
                 m_ResourceProviderData.Add(assetProviderData);
             }
 

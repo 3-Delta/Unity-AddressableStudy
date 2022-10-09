@@ -6,7 +6,8 @@ internal class DelegateList<T>
 {
     Func<Action<T>, LinkedListNode<Action<T>>> m_acquireFunc;
     Action<LinkedListNode<Action<T>>> m_releaseFunc;
-    LinkedList<Action<T>> m_callbacks;
+    
+    LinkedList<Action<T>> m_callbackList;
     bool m_invoking = false;
     public DelegateList(Func<Action<T>, LinkedListNode<Action<T>>> acquireFunc, Action<LinkedListNode<Action<T>>> releaseFunc)
     {
@@ -18,22 +19,22 @@ internal class DelegateList<T>
         m_releaseFunc = releaseFunc;
     }
 
-    public int Count { get { return m_callbacks == null ? 0 : m_callbacks.Count; } }
+    public int Count { get { return this.m_callbackList == null ? 0 : this.m_callbackList.Count; } }
 
     public void Add(Action<T> action)
     {
         var node = m_acquireFunc(action);
-        if (m_callbacks == null)
-            m_callbacks = new LinkedList<Action<T>>();
-        m_callbacks.AddLast(node);
+        if (this.m_callbackList == null)
+            this.m_callbackList = new LinkedList<Action<T>>();
+        this.m_callbackList.AddLast(node);
     }
 
     public void Remove(Action<T> action)
     {
-        if (m_callbacks == null)
+        if (this.m_callbackList == null)
             return;
 
-        var node = m_callbacks.First;
+        var node = this.m_callbackList.First;
         while (node != null)
         {
             if (node.Value == action)
@@ -44,7 +45,7 @@ internal class DelegateList<T>
                 }
                 else
                 {
-                    m_callbacks.Remove(node);
+                    this.m_callbackList.Remove(node);
                     m_releaseFunc(node);
                 }
                 return;
@@ -55,18 +56,18 @@ internal class DelegateList<T>
 
     public void Invoke(T res)
     {
-        if (m_callbacks == null)
+        if (this.m_callbackList == null)
             return;
 
         m_invoking = true;
-        var node = m_callbacks.First;
+        var node = this.m_callbackList.First;
         while (node != null)
         {
             if (node.Value != null)
             {
                 try
                 {
-                    node.Value(res);
+                    node.Value?.Invoke(res);
                 }
                 catch (Exception ex)
                 {
@@ -76,28 +77,30 @@ internal class DelegateList<T>
             node = node.Next;
         }
         m_invoking = false;
-        var r = m_callbacks.First;
-        while (r != null)
+        
+        // 清除list中value为null的项
+        node = this.m_callbackList.First;
+        while (node != null)
         {
-            var next = r.Next;
-            if (r.Value == null)
+            var next = node.Next;
+            if (node.Value == null)
             {
-                m_callbacks.Remove(r);
-                m_releaseFunc(r);
+                this.m_callbackList.Remove(node);
+                m_releaseFunc(node);
             }
-            r = next;
+            node = next;
         }
     }
 
     public void Clear()
     {
-        if (m_callbacks == null)
+        if (this.m_callbackList == null)
             return;
-        var node = m_callbacks.First;
+        var node = this.m_callbackList.First;
         while (node != null)
         {
             var next = node.Next;
-            m_callbacks.Remove(node);
+            this.m_callbackList.Remove(node);
             m_releaseFunc(node);
             node = next;
         }

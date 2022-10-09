@@ -8,17 +8,17 @@ using UnityEngine.AddressableAssets.Initialization;
 
 namespace UnityEngine.ResourceManagement.AsyncOperations
 {
-    internal class InitalizationObjectsOperation : AsyncOperationBase<bool>
+    internal class InitObjectsOperation : AsyncOperationBase<bool>
     {
         private AsyncOperationHandle<ResourceManagerRuntimeData> m_RtdOp;
-        private AddressablesImpl m_Addressables;
+        private AddressablesImpl impl;
         private AsyncOperationHandle<IList<AsyncOperationHandle>> m_DepOp;
 
         public void Init(AsyncOperationHandle<ResourceManagerRuntimeData> rtdOp, AddressablesImpl addressables)
         {
             m_RtdOp = rtdOp;
-            m_Addressables = addressables;
-            m_Addressables.ResourceManager.RegisterForCallbacks();
+            this.impl = addressables;
+            this.impl.ResourceManager.RegisterForCallbacks();
         }
 
         protected override string DebugName
@@ -54,7 +54,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         }
 
         /// <inheritdoc />
-        protected override bool InvokeWaitForCompletion()
+        protected override bool IsComplete()
         {
             if (IsDone)
                 return true;
@@ -73,7 +73,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             return IsDone;
         }
 
-        protected override void Execute()
+        protected override void WhenDependentCompleted()
         {
             var rtd = m_RtdOp.Result;
             if (rtd == null)
@@ -83,7 +83,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 return;
             }
 
-            string buildLogsPath = m_Addressables.ResolveInternalId(PlayerPrefs.GetString(Addressables.kAddressablesRuntimeBuildLogPath));
+            string buildLogsPath = this.impl.ResolveInternalId(PlayerPrefs.GetString(Addressables.kAddressablesRuntimeBuildLogPath));
             if (LogRuntimeWarnings(buildLogsPath))
                 File.Delete(buildLogsPath);
 
@@ -98,7 +98,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
 
                 try
                 {
-                    var o = i.GetAsyncInitHandle(m_Addressables.ResourceManager);
+                    var o = i.GetAsyncInitHandle(this.impl.ResourceManager);
                     initOperations.Add(o);
                     Addressables.LogFormat("Initialization object {0} created instance {1}.", i, o);
                 }
@@ -109,12 +109,12 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 }
             }
 
-            m_DepOp = m_Addressables.ResourceManager.CreateGenericGroupOperation(initOperations, true);
+            m_DepOp = this.impl.ResourceManager.CreateGenericGroupOperation(initOperations, true);
             m_DepOp.Completed += (obj) =>
             {
                 bool success = obj.Status == AsyncOperationStatus.Succeeded;
                 Complete(true, success, success ? "" : $"{obj.DebugName}, status={obj.Status}, result={obj.Result} failed initialization.");
-                m_Addressables.Release(m_DepOp);
+                this.impl.Release(m_DepOp);
             };
         }
     }

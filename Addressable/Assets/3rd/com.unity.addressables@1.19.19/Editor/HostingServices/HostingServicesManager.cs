@@ -167,7 +167,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
         }
 
         /// <summary>
-        /// Initialize manager with the given <see cref="AddressableAssetSettings"/> object.
+        /// Init manager with the given <see cref="AddressableAssetSettings"/> object.
         /// </summary>
         /// <param name="settings"></param>
         public void Initialize(AddressableAssetSettings settings)

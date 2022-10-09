@@ -14,6 +14,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     [DisplayName("Assets from AssetDatabase Provider")]
     public class AssetDatabaseProvider : ResourceProviderBase
     {
+        // assetdata为了模拟异步加载的延迟，所以设置了delay
         float m_LoadDelay = .1f;
 
         private static Object[] LoadAllAssetRepresentationsAtPath(string assetPath)

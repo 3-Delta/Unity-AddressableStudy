@@ -7,14 +7,14 @@ using UnityEngine.Serialization;
 namespace UnityEditor.AddressableAssets.Settings
 {
     /// <summary>
-    /// Asset container for CacheInitializationData.
+    /// Asset container for CacheInitData.
     /// </summary>
     [CreateAssetMenu(fileName = "CacheInitializationSettings.asset", menuName = "Addressables/Initialization/Cache Initialization Settings")]
     public class CacheInitializationSettings : ScriptableObject, IObjectInitializationDataProvider
     {
         [FormerlySerializedAs("m_data")]
         [SerializeField]
-        CacheInitializationData m_Data = new CacheInitializationData();
+        CacheInitData m_Data = new CacheInitData();
         /// <summary>
         /// Display name used in GUI for this object.
         /// </summary>
@@ -22,7 +22,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// The cache initialization data that will be serialized and applied during Addressables initialization.
         /// </summary>
-        public CacheInitializationData Data
+        public CacheInitData Data
         {
             get
             {
@@ -38,9 +38,9 @@ namespace UnityEditor.AddressableAssets.Settings
         /// Create initialization data to be serialized into the Addressables runtime data.
         /// </summary>
         /// <returns>The serialized data for the initialization class and the data.</returns>
-        public ObjectInitializationData CreateObjectInitializationData()
+        public ObjectInitData CreateObjectInitData()
         {
-            return ObjectInitializationData.CreateSerializedInitializationData<CacheInitialization>(typeof(CacheInitialization).Name, m_Data);
+            return ObjectInitData.CreateSerializedInitData<CacheInitialization>(typeof(CacheInitialization).Name, m_Data);
         }
     }
 }

@@ -7,6 +7,7 @@ namespace UnityEngine.AddressableAssets.Initialization
     /// <summary>
     /// Supports the evaluation of embedded runtime variables in addressables locations
     /// </summary>
+    // 其实更应该叫做 AddressablesRuntimeEvaluateer
     public static class AddressablesRuntimeProperties
     {
         // cache these to avoid GC allocations
