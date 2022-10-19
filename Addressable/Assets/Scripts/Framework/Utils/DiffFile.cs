@@ -4,6 +4,7 @@ using System.Collections.Generic;
 // 每次增量更新ab的时候，总是在client比对从而得到最终需要下载哪些文件，也就是哪些文件需要删除，哪些文件需要新增，哪些文件被修改了
 // 可以将这部分比对预处理，在上传给webserver的时候，放置一个difffile，存储（哪些文件需要删除，哪些文件需要新增，哪些文件被修改了）
 // 如果client本地的ab文件被删除或者修改了，那么也需要重新下载，也就是将client一侧的diffFile和remote的diffFile进行merge
+// 另外配合addressable可以load不止一个content，这样子就可以分为加载一个base,加载一个incrment.
 
 [Serializable]
 public class FileDesc {
