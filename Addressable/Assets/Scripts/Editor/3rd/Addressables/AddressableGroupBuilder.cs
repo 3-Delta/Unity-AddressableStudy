@@ -63,7 +63,9 @@ public class AddressableGroupBuilder {
     }
 
     public static void BuildGroups(FolderGroups fg, AddressableAssetSettings aaSettings, bool setAsLocalOrRemote = true) {
-        var folders = fg.ValidGroups(true);
+        var folders = fg.ValidGroups(fg.DedenpendentGroups, true);
+        folders.AddRange(fg.ValidGroups(fg.IndenpendentGroups, true));
+        
         HashSet<string> fixedAssets = new HashSet<string>();
         List<string> ignoreAssets = new List<string>();
         // assetPath:refCount

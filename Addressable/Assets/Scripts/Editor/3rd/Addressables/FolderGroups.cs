@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UO = UnityEngine.Object;
 
 // 继承自ScriptableObject类，必须和monobehaviour一样，一个文件一个类，类名和文件名一样
@@ -94,11 +95,13 @@ public class FolderGroups : ScriptableObject {
     // 如果后续有更新需求，则设置为remote
     // remote资源，aa是用Unity的cache管理的，而我们需要将其存储在persistent下。
     // public bool setAsLocalOrRemote = true;
-    public List<FolderGroup> Groups = new List<FolderGroup>();
+    public List<FolderGroup> DedenpendentGroups = new List<FolderGroup>();
+    // 没有依赖的资源配置，比如音效, 将来如果增量热更的话，可以直接只build这个group, 不需要重新构建所有的group,减少构建时间
+    public List<FolderGroup> IndenpendentGroups = new List<FolderGroup>();
 
-    public List<FolderGroup> ValidGroups(bool onlyIncludeInBuild = true) {
+    public List<FolderGroup> ValidGroups(in List<FolderGroup> target, bool onlyIncludeInBuild = true) {
         List<FolderGroup> ret = new List<FolderGroup>();
-        foreach (var group in this.Groups) {
+        foreach (var group in target) {
             if (group.Valid) {
                 if (!onlyIncludeInBuild || group.includeInBuild) {
                     ret.Add(group);
@@ -111,7 +114,11 @@ public class FolderGroups : ScriptableObject {
 
     public bool Get(string folderName, out FolderGroup group) {
         group = default;
-        var ret = this.Groups.Find(g => g.FolderName.Equals(folderName, StringComparison.Ordinal));
+        var ret = this.DedenpendentGroups.Find(g => g.FolderName.Equals(folderName, StringComparison.Ordinal));
+        if (ret == null) {
+            ret = this.IndenpendentGroups.Find(g => g.FolderName.Equals(folderName, StringComparison.Ordinal));
+        }
+
         return ret != null;
     }
 
