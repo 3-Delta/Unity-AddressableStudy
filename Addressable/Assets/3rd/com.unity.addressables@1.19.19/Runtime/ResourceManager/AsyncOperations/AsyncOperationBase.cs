@@ -251,8 +251,10 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         }
 
         bool m_InDeferredCallbackQueue;
-        void RegisterForDeferredCallbackEvent(bool incrementReferenceCount = true)
+        void RegisterToCompleteList(bool incrementReferenceCount = true)
         {
+            // 异步操作执行完毕，不管成功还是失败，都可能进入延迟完毕的队列
+            // 这个队列至少会延迟一帧
             if (IsDone && !m_InDeferredCallbackQueue) // 如果已完成 并且 不在队列中，那未完成呢？
             {
                 m_InDeferredCallbackQueue = true;
@@ -268,7 +270,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 if (this.m_CompletedActionTDelList == null)
                     this.m_CompletedActionTDelList = DelegateList<AsyncOperationHandle<TObject>>.CreateWithGlobalCache();
                 this.m_CompletedActionTDelList.Add(value);
-                RegisterForDeferredCallbackEvent();
+                this.RegisterToCompleteList();
             }
             remove
             {
@@ -432,7 +434,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                     m_RM?.RemoveOperationFromCache(cachedOperation.Key);
 
                 // 加载失败，也会进入deferlist
-                RegisterForDeferredCallbackEvent(false);
+                this.RegisterToCompleteList(false);
             }
             else
             {

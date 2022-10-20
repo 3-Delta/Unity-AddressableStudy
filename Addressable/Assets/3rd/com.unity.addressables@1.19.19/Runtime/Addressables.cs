@@ -1618,7 +1618,7 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
-        /// Removes any AssetBundles that are no longer referenced in the bundle cache. This can occur when a new, updated catalog excludes entries present in an older catalog.
+        /// Removes any AssetBundles that are no longer referenced in the bundle cache. This can occur when a new, updated catalog excludes contentEntries present in an older catalog.
         /// </summary>
         /// <remarks>
         /// Note, that only AssetBundles loaded through UnityWebRequest are cached. If you want to purge the entire cache, use Caching.ClearCache instead.
@@ -1626,7 +1626,7 @@ namespace UnityEngine.AddressableAssets
         ///
         /// See [AssetBundle caching](xref:addressables-remote-content-distribution#assetbundle-caching) for more details.
         /// </remarks>
-        /// <param name="catalogsIds">The ids of catalogs whose bundle cache entries we want to preserve. If null, entries for all currently loaded catalogs will be preserved.</param>
+        /// <param name="catalogsIds">The ids of catalogs whose bundle cache contentEntries we want to preserve. If null, contentEntries for all currently loaded catalogs will be preserved.</param>
         /// <returns>The operation handle for the request. Note, that it is user's responsibility to release the returned operation; this can be done before or after the operation completes.</returns>
         public static AsyncOperationHandle<bool> CleanBundleCache(IEnumerable<string> catalogsIds = null)
         {

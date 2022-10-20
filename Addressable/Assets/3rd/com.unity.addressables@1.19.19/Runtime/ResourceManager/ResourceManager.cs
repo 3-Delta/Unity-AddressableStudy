@@ -167,6 +167,8 @@ namespace UnityEngine.ResourceManagement
         
         DelegateList<float> m_UpdateDelList = DelegateList<float>.CreateWithGlobalCache();
         
+        // 手机完成的异步操作，然后延迟一帧执行
+        // 主要目的应该是延迟一帧
         List<IAsyncOperation> m_DeferredCompleteCallbacks = new List<IAsyncOperation>();
         bool m_InsideExecuteDeferredCallbacksMethod = false;
         List<DeferredCallbackRegisterRequest> m_DeferredCallbacksToRegister = null;

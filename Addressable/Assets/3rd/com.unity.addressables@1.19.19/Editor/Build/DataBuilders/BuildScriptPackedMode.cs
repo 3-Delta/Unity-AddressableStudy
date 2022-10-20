@@ -338,7 +338,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             using (m_Log.ScopedStep(LogLevel.Info, "Generate Catalog"))
             {
                 contentCatalog = new ContentCatalogData(ResourceManagerRuntimeData.kCatalogAddress);
-                contentCatalog.SetData(aaContext.locations.OrderBy(f => f.InternalId).ToList(), aaContext.Settings.OptimizeCatalogSize);
+                // 方便断点调试查看，这里其实已经排序了依赖，将最要的得来的ab放在了下标0的位置
+                var ls = aaContext.locations.OrderBy(f => f.InternalId).ToList();
+                // ls中其实就是各种bundle以及各种bundle中的asset，也包括在resource中以及editorbuildsceneList中依赖的资源
+                contentCatalog.SetData(ls, aaContext.Settings.OptimizeCatalogSize);
 
                 contentCatalog.ResourceProviderData.AddRange(m_ResourceProviderData);
                 foreach (var t in aaContext.providerTypes)
@@ -1223,7 +1226,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     string s = location.Dependencies[i] as string;
                     if (string.IsNullOrEmpty(s))
                         continue;
-                    if (s == from)
+                    if (s == from) // 只是从hashBundle替换为一个最终的bundlename
                         location.Dependencies[i] = to;
                 }
             }

@@ -11,7 +11,7 @@ public class App : ComponentSingleton<App> {
 
     private void Update() {
         if (Input.GetKeyDown(KeyCode.A)) {
-            AddressableUtils.InstantiateAsync(ref handler, this.path, OnLoaded, null);
+            AddressableUtils.LoadAssetAsync(ref handler, this.path, OnLoaded);
         }
     }
 

@@ -1173,7 +1173,7 @@ namespace UnityEngine.AddressableAssets
             IList<IResourceLocation> locs;
             foreach (var locatorInfo in m_ResourceLocators)
             {
-                var locator = locatorInfo.Locator; // 根据address查找具体资源
+                var locator = locatorInfo.Locator; // 根据address和具体type,查找具体资源
                 if (locator.Locate(key, typeof(GameObject), out locs))
                     return InstantiateAsync(locs[0], instantiateParameters, trackHandle);
             }
