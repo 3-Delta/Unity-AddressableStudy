@@ -132,7 +132,16 @@ MonoBehaviour:
       m_InlineUsage: 0
     m_ProfileVersion: 1
   m_LabelTable:
-    m_LabelNames: []
+    m_LabelNames:
+    - QH
+    - QM
+    - QL
+    - RegionCN
+    - RegionTW
+    - RegionHK
+    - RegionMO
+    - RegionUSA
+    - RegionUK
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: 0231f6b247202f44cb7b54574e6076fa, type: 2}
