@@ -72,7 +72,7 @@ public class SceneEntry {
         }
 
         this.sceneLoadStatus = ESceneLoadStatus.Loading;
-        AddressableUtils.LoadSceneAsync(ref this.handler, Path, UScene.LoadSceneMode.Additive, true, 100, OnSceneLoaded);
+        AddressableService.LoadSceneAsync(ref this.handler, Path, UScene.LoadSceneMode.Additive, true, 100, OnSceneLoaded);
     }
 
     private void OnSceneLoaded(AsyncOperationHandle<SceneInstance> sceneHandler) {
@@ -95,7 +95,7 @@ public class SceneEntry {
         if (IsDone) {
             if (this.handler.IsValid()) {
                 this.sceneLoadStatus = ESceneLoadStatus.Releasing;
-                AddressableUtils.ReleaseScene(ref this.handler, OnSceneReleased);
+                AddressableService.ReleaseScene(ref this.handler, OnSceneReleased);
             }
             else {
                 this.sceneLoadStatus = ESceneLoadStatus.Nil;

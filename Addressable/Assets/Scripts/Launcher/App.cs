@@ -11,7 +11,7 @@ public class App : ComponentSingleton<App> {
 
     private void Update() {
         if (Input.GetKeyDown(KeyCode.A)) {
-            AddressableUtils.LoadAssetAsync(ref handler, this.path, OnLoaded);
+            AddressableService.LoadAssetAsync(ref handler, this.path, OnLoaded);
         }
     }
 
@@ -20,6 +20,6 @@ public class App : ComponentSingleton<App> {
     }
 
     private void OnDestroy() {
-        AddressableUtils.ReleaseInstance(ref this.handler, this.OnLoaded);
+        AddressableService.ReleaseInstance(ref this.handler, this.OnLoaded);
     }
 }
