@@ -17,7 +17,7 @@ namespace UnityEngine.Build.Pipeline
         [SerializeField]
         string m_Hash;
 
-        [SerializeField]
+        [SerializeField] // 依赖的bundle,不是asset
         string[] m_Dependencies;
 
         /// <summary>

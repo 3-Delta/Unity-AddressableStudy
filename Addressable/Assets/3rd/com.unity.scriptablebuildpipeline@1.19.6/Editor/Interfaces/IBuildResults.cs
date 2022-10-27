@@ -36,6 +36,6 @@ namespace UnityEditor.Build.Pipeline.Interfaces
         /// Map of Asset Bundle name to details about the built bundle.
         /// </summary>
         /// hashbundle:detail
-        Dictionary<string, BundleDetails> BundleInfos { get; }
+        Dictionary<string, BundleDetails> BundleDetails { get; }
     }
 }

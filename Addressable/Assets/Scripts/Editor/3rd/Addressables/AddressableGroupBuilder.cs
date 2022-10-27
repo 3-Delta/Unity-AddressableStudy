@@ -147,7 +147,7 @@ public class AddressableGroupBuilder {
                 schemaBundle.UseUnityWebRequestForLocalBundles = false;
                 schemaBundle.InternalIdNamingMode = BundledAssetGroupSchema.AssetNamingMode.FullPath; // bundle内部资源的命名模式
                 // AppendHash会有文件夹的层次结构
-                schemaBundle.BundleNaming = BundledAssetGroupSchema.BundleNamingStyle.AppendHash; // hash作为bundle name
+                schemaBundle.BundleNaming = BundledAssetGroupSchema.BundleNamingStyle.NoHash; // hash作为bundle name
                 // FileNameHash 平铺，同时bundle的命名只有hash
                 schemaBundle.BundleMode = folder.allInOne ? BundledAssetGroupSchema.BundlePackingMode.PackTogether : BundledAssetGroupSchema.BundlePackingMode.PackSeparately;
                 

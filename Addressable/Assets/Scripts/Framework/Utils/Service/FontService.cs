@@ -7,6 +7,7 @@ using UO = UnityEngine.Object;
 public class SingleAssetService<T> where T :  UO {
     public static Dictionary<string, AsyncOperationHandle<T>> store = new Dictionary<string, AsyncOperationHandle<T>>();
 
+    // 后面加载的时候应该要考虑到语言和地区，比如繁体语言，香港地区，粤语配音的label
     public static T Get(string key) {
         if (string.IsNullOrWhiteSpace(key)) {
             return default(T);

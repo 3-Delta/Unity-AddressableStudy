@@ -297,6 +297,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     }
                 }
 
+                using (m_Log.ScopedStep(LogLevel.Info, "Record Bundle Changes")) {
+                    RecordBundleChanges(aaContext, this.m_Allabbs, builderInput, results);
+                }
+
                 using (m_Log.ScopedStep(LogLevel.Info, "Process Catalog Entries"))
                 {
                     ProcessCatalogEntriesForBuild(aaContext, groups, builderInput, extractData.WriteData,
@@ -470,6 +474,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
 
             bundleToInternalId.Clear();
+        }
+
+        private static void RecordBundleChanges(AddressableAssetsBuildContext aaContext, List<AssetBundleBuild> abbs, AddressablesDataBuilderInput buildInput, IBundleBuildResults results) {
+            string path = Path.Combine(Addressables.BuildPath, "manifest.json");
+            CompatibilityBuildPipeline.WriteManifest(results.BundleDetails, path);
         }
 
         private static Dictionary<string, ContentCatalogDataEntry> BuildLocationIdToCatalogEntryMap(List<ContentCatalogDataEntry> locations)
@@ -1085,34 +1094,34 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 if (primaryKeyToCatalogEntry.TryGetValue(hashBundles[i], out ContentCatalogDataEntry dataEntry))
                 {
                     // hashbundle:detail 不管是增量，还是全量，先全部构建hashbundle到temp目录下， 然后这个根据hash获取detail
-                    var info = buildResult.BundleInfos[hashBundles[i]];
+                    var detail = buildResult.BundleDetails[hashBundles[i]];
                     var requestOptions = new AssetBundleRequestOptions
                     {
-                        Crc = schema.UseAssetBundleCrc ? info.Crc : 0,
+                        Crc = schema.UseAssetBundleCrc ? detail.Crc : 0,
                         UseCrcForCachedBundle = schema.UseAssetBundleCrcForCachedBundles,
                         UseUnityWebRequestForLocalBundles = schema.UseUnityWebRequestForLocalBundles,
-                        Hash = schema.UseAssetBundleCache ? info.Hash.ToString() : "",
+                        Hash = schema.UseAssetBundleCache ? detail.Hash.ToString() : "",
                         ChunkedTransfer = schema.ChunkedTransfer,
                         RedirectLimit = schema.RedirectLimit,
                         RetryCount = schema.RetryCount,
                         Timeout = schema.Timeout,
-                        BundleName = Path.GetFileNameWithoutExtension(info.FileName),
+                        BundleName = Path.GetFileNameWithoutExtension(detail.FileName),
                         AssetLoadMode = schema.AssetLoadMode,
-                        BundleSize = GetFileSize(info.FileName),
+                        BundleSize = GetFileSize(detail.FileName),
                         ClearOtherCachedVersionsWhenLoaded = schema.AssetBundledCacheClearBehavior == BundledAssetGroupSchema.CacheClearBehavior.ClearWhenWhenNewVersionLoaded
                     };
                     dataEntry.Data = requestOptions;
                     
-                    if (assetGroup == assetGroup.Settings.DefaultGroup && info.Dependencies.Length == 0 && !string.IsNullOrEmpty(info.FileName) && (info.FileName.EndsWith("_unitybuiltinshaders.bundle") || info.FileName.EndsWith("_monoscripts.bundle")))
+                    if (assetGroup == assetGroup.Settings.DefaultGroup && detail.Dependencies.Length == 0 && !string.IsNullOrEmpty(detail.FileName) && (detail.FileName.EndsWith("_unitybuiltinshaders.bundle") || detail.FileName.EndsWith("_monoscripts.bundle")))
                     {
-                        outputBundles[i] = ConstructAssetBundleName(null, schema, info, outputBundles[i]);
+                        outputBundles[i] = ConstructAssetBundleName(null, schema, detail, outputBundles[i]);
                     }
                     else
                     {
                         int extensionLength = Path.GetExtension(outputBundles[i]).Length;
                         string[] deconstructedBundleName = outputBundles[i].Substring(0, outputBundles[i].Length - extensionLength).Split('_');
                         string reconstructedBundleName = string.Join("_", deconstructedBundleName, 1, deconstructedBundleName.Length - 1) + ".bundle";
-                        outputBundles[i] = ConstructAssetBundleName(assetGroup, schema, info, reconstructedBundleName);
+                        outputBundles[i] = ConstructAssetBundleName(assetGroup, schema, detail, reconstructedBundleName);
                     }
                     
                     dataEntry.InternalId = dataEntry.InternalId.Remove(dataEntry.InternalId.Length - hashBundles[i].Length) + outputBundles[i];

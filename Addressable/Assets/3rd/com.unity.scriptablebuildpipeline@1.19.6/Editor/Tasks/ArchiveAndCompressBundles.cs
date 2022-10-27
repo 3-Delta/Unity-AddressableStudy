@@ -175,7 +175,7 @@ namespace UnityEditor.Build.Pipeline.Tasks
             input.InternalFilenameToWriteMetaData = m_Results.WriteResultsMetaData;
             input.Log = m_Log;
 
-            input.Threaded = ReflectionExtensions.SupportsMultiThreadedArchiving && ScriptableBuildPipeline.threadedArchiving;
+            input.Threaded = false; // ReflectionExtensions.SupportsMultiThreadedArchiving && ScriptableBuildPipeline.threadedArchiving;
 
             TaskOutput output;
             // 处理从buildcache -> temp
@@ -184,7 +184,7 @@ namespace UnityEditor.Build.Pipeline.Tasks
             if (code == ReturnCode.Success)
             {
                 foreach (var item in output.BundleDetails)
-                    m_Results.BundleInfos.Add(item.Key, item.Value);
+                    m_Results.BundleDetails.Add(item.Key, item.Value);
             }
 
             return code;
@@ -379,6 +379,9 @@ namespace UnityEditor.Build.Pipeline.Tasks
 
                 Directory.CreateDirectory(Path.GetDirectoryName(writePath));
                 item.ResultDetails.FileName = item.OutputFilePath;
+                
+                // 构建bundle到buildcache目录下，后面copy到temp下
+                // 原以为构建bundle用的是BuildPipeline.BuildBundle,所以还在想manifest怎么获取呢
                 item.ResultDetails.Crc = ContentBuildInterface.ArchiveAndCompress(item.ResourceFiles.ToArray(), writePath, item.Compression);
 
                 CopyFileWithTimestampIfDifferent(writePath, item.ResultDetails.FileName, log);

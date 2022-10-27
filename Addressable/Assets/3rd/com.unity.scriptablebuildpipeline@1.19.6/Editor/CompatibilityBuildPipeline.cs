@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline.Interfaces;
@@ -91,9 +92,14 @@ namespace UnityEditor.Build.Pipeline
             if (exitCode < ReturnCode.Success)
                 return null;
 
+            string outPath = parameters.GetOutputFilePathForIdentifier(Path.GetFileName(outputPath) + ".manifest");
+            return WriteManifest(results.BundleDetails, outPath);
+        }
+
+        public static CompatibilityAssetBundleManifest WriteManifest(Dictionary<string, BundleDetails> bundleDetails, string outPath) {
             var manifest = ScriptableObject.CreateInstance<CompatibilityAssetBundleManifest>();
-            manifest.SetResults(results.BundleInfos);
-            File.WriteAllText(parameters.GetOutputFilePathForIdentifier(Path.GetFileName(outputPath) + ".manifest"), manifest.ToString());
+            manifest.SetResults(bundleDetails);
+            File.WriteAllText(outPath, manifest.ToString());
             return manifest;
         }
     }

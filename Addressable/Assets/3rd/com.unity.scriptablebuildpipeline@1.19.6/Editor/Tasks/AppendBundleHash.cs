@@ -27,14 +27,14 @@ namespace UnityEditor.Build.Pipeline.Tasks
             if (!m_Parameters.AppendHash)
                 return ReturnCode.SuccessNotRun;
 
-            string[] bundles = m_Results.BundleInfos.Keys.ToArray();
+            string[] bundles = m_Results.BundleDetails.Keys.ToArray();
             foreach (string bundle in bundles)
             {
-                var details = m_Results.BundleInfos[bundle];
+                var details = m_Results.BundleDetails[bundle];
                 var oldFileName = details.FileName;
                 var newFileName = string.Format("{0}_{1}", details.FileName, details.Hash.ToString());
                 details.FileName = newFileName;
-                m_Results.BundleInfos[bundle] = details;
+                m_Results.BundleDetails[bundle] = details;
 
                 File.Delete(newFileName);
                 File.Move(oldFileName, newFileName);

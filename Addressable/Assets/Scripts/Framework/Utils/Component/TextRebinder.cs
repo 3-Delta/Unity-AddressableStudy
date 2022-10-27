@@ -8,13 +8,14 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Text))]
 [DisallowMultipleComponent]
 public class TextRebinder : MonoBehaviour {
-    public static readonly string PREFIX = "Assets/AddressableResources/Font";
+    public const string PREFIX = "Assets/AddressableResources/Font";
 
     public string fontKey;
 
     public Text text;
 
 #if UNITY_EDITOR // 打包ab的时候，editor下剔除prefab的font引用，记录font的信息
+    [ContextMenu(nameof(Restore))]
     public void Restore() {
         if (!this.text) {
             this.text = this.GetComponent<Text>();

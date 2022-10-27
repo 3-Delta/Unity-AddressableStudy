@@ -59,7 +59,7 @@ namespace UnityEditor.Build.Pipeline
         /// <inheritdoc />
         public ScriptCompilationResult ScriptResults { get; set; }
         /// <inheritdoc />
-        public Dictionary<string, BundleDetails> BundleInfos { get; private set; }
+        public Dictionary<string, BundleDetails> BundleDetails { get; private set; }
         /// <inheritdoc />
         public Dictionary<string, WriteResult> WriteResults { get; private set; }
         /// <inheritdoc />
@@ -70,7 +70,7 @@ namespace UnityEditor.Build.Pipeline
         /// </summary>
         public BundleBuildResults()
         {
-            BundleInfos = new Dictionary<string, BundleDetails>();
+            this.BundleDetails = new Dictionary<string, BundleDetails>();
             WriteResults = new Dictionary<string, WriteResult>();
             WriteResultsMetaData = new Dictionary<string, SerializedFileMetaData>();
         }
