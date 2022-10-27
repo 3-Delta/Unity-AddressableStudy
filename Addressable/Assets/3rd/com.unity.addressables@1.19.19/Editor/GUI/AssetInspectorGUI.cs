@@ -20,6 +20,8 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             s_ToggleMixed = null;
             s_AddressableAssetToggleText = new GUIContent("Addressable", "Check this to mark this asset as an Addressable Asset, which includes it in the bundled data and makes it loadable via script by its address.");
+            
+            // 这个回调有可能引起编辑器卡顿，可以屏蔽
             Editor.finishedDefaultHeaderGUI += OnPostHeaderGUI;
         }
 
